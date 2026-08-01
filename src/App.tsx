@@ -1,4 +1,19 @@
-import { Building2, ClipboardList, PackagePlus, Search, Send, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Boxes,
+  Building2,
+  CircleDollarSign,
+  ClipboardList,
+  Clock3,
+  MapPin,
+  PackagePlus,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Warehouse,
+} from "lucide-react";
 import React, { FormEvent, useMemo, useState } from "react";
 import logo1 from "../assets/logo_1.jpeg";
 import logo2 from "../assets/logo_2.jpeg";
@@ -92,6 +107,11 @@ function statusClass(status: string) {
   if (status === "Disponivel" || status === "Aprovado") return "status-positive";
   if (status === "Solicitado" || status === "Recusado") return "status-negative";
   return "status-warning";
+}
+
+function percentage(part: number, total: number) {
+  if (!total) return 0;
+  return Math.round((part / total) * 100);
 }
 
 function AppShell({
@@ -192,8 +212,70 @@ function DashboardPage({
   solicitations: Solicitation[];
   goTo: (page: Page) => void;
 }) {
+  const availableCount = equipments.filter((item) => item.status === "Disponivel").length;
+  const pendingCount = solicitations.filter((item) => item.decisaoAdmin === "Pendente").length;
+  const totalEstimatedValue = equipments.reduce(
+    (total, item) => total + Number(item.valorEstimado || 0),
+    0,
+  );
+  const highlightedEquipment = equipments[0];
+  const latestSolicitation = solicitations[0];
+  const municipalityCounts = equipments.reduce<Record<string, number>>((acc, item) => {
+    acc[item.municipio] = (acc[item.municipio] || 0) + 1;
+    return acc;
+  }, {});
+  const topMunicipality =
+    Object.entries(municipalityCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Sem definicao";
+
   return (
     <PageBlock page="dashboard">
+      <section className="hero-spotlight">
+        <div className="hero-spotlight-copy">
+          <span className="hero-chip">
+            <Sparkles size={14} />
+            Nova experiencia operacional
+          </span>
+          <h3>Uma central mais premium para consultar, cadastrar e distribuir equipamentos com clareza.</h3>
+          <p>
+            Mantivemos a base do Sistema Bahia, mas agora com uma camada visual mais forte,
+            mais institucional e pronta para crescer com dados reais e aprovacoes.
+          </p>
+          <div className="hero-actions">
+            <button type="button" className="hero-primary" onClick={() => goTo("novo")}>
+              Cadastrar equipamento
+              <ArrowRight size={16} />
+            </button>
+            <button type="button" className="hero-secondary" onClick={() => goTo("equipamentos")}>
+              Explorar galeria
+            </button>
+          </div>
+        </div>
+
+        <div className="hero-spotlight-panel">
+          <div className="hero-panel-top">
+            <strong>Disponibilidade da base</strong>
+            <span>{percentage(availableCount, equipments.length)}%</span>
+          </div>
+          <div className="progress-rail">
+            <span style={{ width: `${percentage(availableCount, equipments.length)}%` }} />
+          </div>
+          <div className="hero-mini-stats">
+            <div>
+              <small>Municipio com mais itens</small>
+              <strong>{topMunicipality}</strong>
+            </div>
+            <div>
+              <small>Valor consolidado</small>
+              <strong>{currencyFormatter(totalEstimatedValue)}</strong>
+            </div>
+            <div>
+              <small>Solicitacoes pendentes</small>
+              <strong>{pendingCount}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="cards-grid">
         {[
           "Equipamentos cadastrados",
@@ -208,7 +290,7 @@ function DashboardPage({
         ))}
       </section>
 
-      <section className="dashboard-grid-two">
+      <section className="dashboard-grid-featured">
         <div className="panel">
           <div className="panel-heading">
             <h3>Fluxos principais</h3>
@@ -260,6 +342,123 @@ function DashboardPage({
               <span>Deploy pronto para conectar quando o repositorio estiver no GitHub.</span>
             </div>
           </div>
+        </div>
+
+        <div className="panel panel-accent">
+          <div className="panel-heading">
+            <h3>Radar operacional</h3>
+            <p>Leitura rapida do que merece atencao agora.</p>
+          </div>
+          <div className="insight-list">
+            <div className="insight-card">
+              <div className="insight-icon">
+                <Warehouse size={18} />
+              </div>
+              <div>
+                <strong>{availableCount} equipamentos disponiveis</strong>
+                <span>Prontos para novas solicitacoes imediatas.</span>
+              </div>
+            </div>
+            <div className="insight-card">
+              <div className="insight-icon">
+                <Clock3 size={18} />
+              </div>
+              <div>
+                <strong>{pendingCount} solicitacoes em analise</strong>
+                <span>Fila administrativa aguardando decisao.</span>
+              </div>
+            </div>
+            <div className="insight-card">
+              <div className="insight-icon">
+                <MapPin size={18} />
+              </div>
+              <div>
+                <strong>{topMunicipality} em destaque</strong>
+                <span>Concentracao atual mais forte da base.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-grid-two">
+        <div className="panel featured-equipment-panel">
+          <div className="panel-heading">
+            <h3>Equipamento em evidência</h3>
+            <p>Uma vitrine mais forte para destacar registros relevantes.</p>
+          </div>
+          {highlightedEquipment && (
+            <div className="featured-equipment-card">
+              <div className="featured-banner">
+                <span className={`status-pill ${statusClass(highlightedEquipment.status)}`}>
+                  {highlightedEquipment.status}
+                </span>
+                <span className="featured-program">{highlightedEquipment.programa}</span>
+              </div>
+              <h4>{highlightedEquipment.nome}</h4>
+              <p>{highlightedEquipment.descricao}</p>
+              <div className="featured-grid">
+                <div>
+                  <small>Municipio</small>
+                  <strong>{highlightedEquipment.municipio}</strong>
+                </div>
+                <div>
+                  <small>Endereco</small>
+                  <strong>{highlightedEquipment.endereco}</strong>
+                </div>
+                <div>
+                  <small>Proprietario</small>
+                  <strong>{highlightedEquipment.proprietario}</strong>
+                </div>
+                <div>
+                  <small>Valor estimado</small>
+                  <strong>{currencyFormatter(highlightedEquipment.valorEstimado)}</strong>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="panel activity-panel">
+          <div className="panel-heading">
+            <h3>Ultima movimentacao</h3>
+            <p>Resumo executivo do pedido mais recente registrado.</p>
+          </div>
+          {latestSolicitation && (
+            <div className="timeline-card">
+              <div className="timeline-line" />
+              <div className="timeline-item">
+                <div className="timeline-point">
+                  <Send size={14} />
+                </div>
+                <div>
+                  <strong>{latestSolicitation.equipamentoNome}</strong>
+                  <span>
+                    Solicitado por {latestSolicitation.nomeSolicitante} para{" "}
+                    {latestSolicitation.localDestino}.
+                  </span>
+                </div>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-point">
+                  <BadgeCheck size={14} />
+                </div>
+                <div>
+                  <strong>Status atual: {latestSolicitation.decisaoAdmin}</strong>
+                  <span>{latestSolicitation.observacoes ?? "Sem observacoes adicionais."}</span>
+                </div>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-point">
+                  <CircleDollarSign size={14} />
+                </div>
+                <div>
+                  <strong>Base preparada para integracao real</strong>
+                  <span>O proximo passo e ligar banco, anexos e autenticacao.</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </PageBlock>
@@ -402,7 +601,38 @@ function App() {
 
       {page === "novo" && (
         <PageBlock page="novo">
-          <section className="panel">
+          <section className="dashboard-grid-two form-layout-grid">
+            <div className="panel panel-accent">
+              <div className="panel-heading">
+                <h3>Direcao da tela</h3>
+                <p>Este formulario ja segue a logica do PowerApps, mas com um acabamento mais elegante e institucional.</p>
+              </div>
+              <div className="form-intro-list">
+                <div className="form-intro-item">
+                  <Boxes size={18} />
+                  <div>
+                    <strong>Cadastro estruturado</strong>
+                    <span>Campos organizados por contexto, com leitura bem mais leve.</span>
+                  </div>
+                </div>
+                <div className="form-intro-item">
+                  <MapPin size={18} />
+                  <div>
+                    <strong>Endereco dependente do municipio</strong>
+                    <span>Regra ja pronta para depois receber a base real do Supabase.</span>
+                  </div>
+                </div>
+                <div className="form-intro-item">
+                  <BadgeCheck size={18} />
+                  <div>
+                    <strong>Pronto para anexos e validacoes</strong>
+                    <span>Estrutura preparada para virar fluxo de producao.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <section className="panel">
             <div className="panel-heading">
               <h3>Cadastro principal</h3>
               <p>Formulario base da tela do PowerApps, ja preparado para depois salvar no Supabase.</p>
@@ -524,6 +754,7 @@ function App() {
                 <button type="submit">Salvar equipamento</button>
               </div>
             </form>
+            </section>
           </section>
         </PageBlock>
       )}
@@ -541,6 +772,30 @@ function App() {
             </div>
           }
         >
+          <section className="gallery-toolbar panel">
+            <div className="gallery-toolbar-copy">
+              <h3>Galeria inteligente de equipamentos</h3>
+              <p>
+                Um formato mais bonito para navegar a base, destacar itens e abrir a
+                solicitacao com menos atrito.
+              </p>
+            </div>
+            <div className="gallery-toolbar-stats">
+              <div>
+                <small>Resultados</small>
+                <strong>{filteredEquipments.length}</strong>
+              </div>
+              <div>
+                <small>Disponiveis</small>
+                <strong>{equipments.filter((item) => item.status === "Disponivel").length}</strong>
+              </div>
+              <div>
+                <small>Programas</small>
+                <strong>{new Set(equipments.map((item) => item.programa)).size}</strong>
+              </div>
+            </div>
+          </section>
+
           <section className="equipment-grid">
             {filteredEquipments.map((equipment) => (
               <article key={equipment.id} className="equipment-card">
@@ -582,6 +837,31 @@ function App() {
 
       {page === "solicitacoes" && (
         <PageBlock page="solicitacoes">
+          <section className="cards-grid cards-grid-compact">
+            <div className="metric">
+              <span>Solicitacoes totais</span>
+              <strong>{solicitations.length}</strong>
+            </div>
+            <div className="metric">
+              <span>Aprovadas</span>
+              <strong>
+                {solicitations.filter((item) => item.decisaoAdmin === "Aprovado").length}
+              </strong>
+            </div>
+            <div className="metric">
+              <span>Pendentes</span>
+              <strong>
+                {solicitations.filter((item) => item.decisaoAdmin === "Pendente").length}
+              </strong>
+            </div>
+            <div className="metric">
+              <span>Recusadas</span>
+              <strong>
+                {solicitations.filter((item) => item.decisaoAdmin === "Recusado").length}
+              </strong>
+            </div>
+          </section>
+
           <section className="panel">
             <div className="panel-heading">
               <h3>Galeria administrativa</h3>
