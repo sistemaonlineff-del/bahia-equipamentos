@@ -1,15 +1,13 @@
 import {
-  ArrowRight,
-  Building2,
-  ChevronRight,
+  Boxes,
   ClipboardList,
-  Compass,
-  LayoutGrid,
+  FileText,
+  MapPinned,
   PackagePlus,
   Search,
   Send,
   ShieldCheck,
-  Sparkles,
+  Warehouse,
 } from "lucide-react";
 import React, { FormEvent, useMemo, useState } from "react";
 import logo1 from "../assets/logo_1.jpeg";
@@ -63,21 +61,17 @@ const initialSolicitationForm: SolicitationFormState = {
 };
 
 const pageLabels: Record<Page, string> = {
-  dashboard: "Overview",
-  novo: "Novo Equipamento",
-  equipamentos: "Galeria",
+  dashboard: "Painel",
+  novo: "Cadastrar",
+  equipamentos: "Equipamentos",
   solicitacoes: "Solicitacoes",
 };
 
 const pageDescriptions: Record<Page, string> = {
-  dashboard:
-    "Uma leitura mais autoral da operacao, com uma composicao mais premium e menos cara de sistema padrao.",
-  novo:
-    "Um cadastro mais editorial, com melhor respiracao visual e uma forma mais profissional de apresentar os campos.",
-  equipamentos:
-    "Uma galeria mais elegante para explorar a base, com foco em leitura, ritmo e destaque de cada item.",
-  solicitacoes:
-    "Uma tela mais limpa para decisao administrativa, com estrutura visual melhor para acompanhar os pedidos.",
+  dashboard: "Visao operacional da base, disponibilidade e pendencias.",
+  novo: "Cadastro padronizado de equipamentos e dados operacionais.",
+  equipamentos: "Consulta da base com busca rapida e acao de solicitacao.",
+  solicitacoes: "Acompanhamento administrativo dos pedidos registrados.",
 };
 
 function currencyFormatter(value: number) {
@@ -86,6 +80,10 @@ function currencyFormatter(value: number) {
     currency: "BRL",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function dateFormatter(value: string) {
+  return new Intl.DateTimeFormat("pt-BR").format(new Date(`${value}T00:00:00`));
 }
 
 function statusClass(status: string) {
@@ -104,44 +102,36 @@ function AppShell({
   children: React.ReactNode;
 }) {
   const navItems: { id: Page; icon: React.ReactNode; caption: string }[] = [
-    { id: "dashboard", icon: <Compass size={18} />, caption: "Panorama geral" },
-    { id: "novo", icon: <PackagePlus size={18} />, caption: "Cadastro" },
-    { id: "equipamentos", icon: <LayoutGrid size={18} />, caption: "Consulta visual" },
-    { id: "solicitacoes", icon: <ClipboardList size={18} />, caption: "Fila administrativa" },
+    { id: "dashboard", icon: <Boxes size={18} />, caption: "Resumo" },
+    { id: "novo", icon: <PackagePlus size={18} />, caption: "Novo registro" },
+    { id: "equipamentos", icon: <Warehouse size={18} />, caption: "Base cadastrada" },
+    { id: "solicitacoes", icon: <ClipboardList size={18} />, caption: "Fila de pedidos" },
   ];
 
   return (
     <div className="shell">
-      <aside className="rail">
-        <div className="rail-brand">
-          <div className="rail-logos">
+      <aside className="sidebar">
+        <div className="brand-panel">
+          <div className="brand-logos">
             <img src={logo1} alt="Logo CAR" />
             <img src={logo2} alt="Logo Governo da Bahia" />
           </div>
-          <div className="rail-brand-copy">
+          <div className="brand-copy">
             <strong>Bahia Equipamentos</strong>
-            <span>Plataforma operacional</span>
+            <span>Controle operacional</span>
           </div>
         </div>
 
-        <div className="rail-user">
-          <div className="rail-avatar">B</div>
-          <div>
-            <strong>Equipe Bahia</strong>
-            <span>Ambiente inicial</span>
-          </div>
-        </div>
-
-        <nav className="rail-nav">
+        <nav className="sidebar-nav">
           {navItems.map((item) => (
             <button
               key={item.id}
               type="button"
-              className={page === item.id ? "rail-link active" : "rail-link"}
+              className={page === item.id ? "nav-link active" : "nav-link"}
               onClick={() => setPage(item.id)}
             >
-              <span className="rail-link-icon">{item.icon}</span>
-              <span className="rail-link-copy">
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-copy">
                 <strong>{pageLabels[item.id]}</strong>
                 <small>{item.caption}</small>
               </span>
@@ -149,18 +139,30 @@ function AppShell({
           ))}
         </nav>
 
-        <div className="rail-note">
-          <ShieldCheck size={16} />
-          Estrutura pronta para Supabase, GitHub e Vercel.
+        <div className="sidebar-footer">
+          <div className="footer-badge">
+            <ShieldCheck size={16} />
+            <span>Ambiente homologado para migracao do PowerApps</span>
+          </div>
         </div>
       </aside>
 
-      <section className="stage">
-        <header className="masthead">
+      <section className="content">
+        <header className="topbar">
           <div>
-            <span className="eyebrow">Sistema Bahia</span>
+            <span className="topbar-kicker">Sistema interno</span>
             <h1>Gestao de Equipamentos</h1>
-            <p>Uma interface mais marcante, profissional e com linguagem visual de produto.</p>
+            <p>{pageDescriptions[page]}</p>
+          </div>
+          <div className="topbar-meta">
+            <div>
+              <span>Ambiente</span>
+              <strong>Mock operacional</strong>
+            </div>
+            <div>
+              <span>Atualizacao</span>
+              <strong>04/08/2026</strong>
+            </div>
           </div>
         </header>
         {children}
@@ -180,11 +182,10 @@ function PageFrame({
 }) {
   return (
     <main className="page-frame">
-      <section className="page-banner">
+      <section className="page-header">
         <div>
-          <span className="page-kicker">Bahia</span>
-          <h2>{pageLabels[page]}</h2>
-          <p>{pageDescriptions[page]}</p>
+          <span className="section-label">{pageLabels[page]}</span>
+          <h2>{pageDescriptions[page]}</h2>
         </div>
         {actions}
       </section>
@@ -203,131 +204,147 @@ function DashboardPage({
   goTo: (page: Page) => void;
 }) {
   const availableCount = equipments.filter((item) => item.status === "Disponivel").length;
+  const requestedCount = equipments.filter((item) => item.status === "Solicitado").length;
+  const maintenanceCount = equipments.filter((item) => item.status === "Em analise").length;
   const totalEstimatedValue = equipments.reduce(
     (total, item) => total + Number(item.valorEstimado || 0),
     0,
   );
   const pendingCount = solicitations.filter((item) => item.decisaoAdmin === "Pendente").length;
-  const leadEquipment = equipments[0];
 
   return (
     <PageFrame page="dashboard">
-      <section className="overview-grid">
-        <article className="hero-card">
-          <div className="hero-card-copy">
-            <span className="hero-chip">
-              <Sparkles size={14} />
-              Nova assinatura visual
-            </span>
-            <h3>Uma operacao com mais presenca, mais design e menos cara de painel comum.</h3>
-            <p>
-              O foco aqui e transformar a percepcao do produto: uma interface mais premium,
-              mais organizada e com um layout mais memoravel.
-            </p>
-            <div className="hero-actions">
-              <button type="button" className="cta-primary" onClick={() => goTo("novo")}>
-                Cadastrar novo
-                <ArrowRight size={16} />
-              </button>
-              <button type="button" className="cta-ghost" onClick={() => goTo("equipamentos")}>
-                Explorar galeria
-              </button>
-            </div>
-          </div>
-
-          <div className="hero-card-side">
-            <div className="hero-value">
-              <span>Disponibilidade</span>
-              <strong>{Math.round((availableCount / Math.max(equipments.length, 1)) * 100)}%</strong>
-            </div>
-            <div className="hero-meter">
-              <span
-                style={{
-                  width: `${Math.round((availableCount / Math.max(equipments.length, 1)) * 100)}%`,
-                }}
-              />
-            </div>
-            <p>{availableCount} itens liberados para novas solicitacoes agora.</p>
-          </div>
-        </article>
-
-        <article className="spotlight-card">
-          <span className="card-tag">Destaque</span>
-          <h3>{leadEquipment?.nome ?? "Base em preparacao"}</h3>
-          <p>{leadEquipment?.descricao ?? "Assim que houver registros, eles aparecem aqui."}</p>
-          <dl>
-            <div>
-              <dt>Municipio</dt>
-              <dd>{leadEquipment?.municipio ?? "-"}</dd>
-            </div>
-            <div>
-              <dt>Programa</dt>
-              <dd>{leadEquipment?.programa ?? "-"}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{leadEquipment?.status ?? "-"}</dd>
-            </div>
-          </dl>
-        </article>
-      </section>
-
-      <section className="stats-ribbon">
-        <article className="stat-tile stat-tile-wide">
-          <span>Base total</span>
+      <section className="metric-grid">
+        <article className="metric-card">
+          <span>Total cadastrado</span>
           <strong>{equipments.length}</strong>
-          <small>equipamentos cadastrados</small>
+          <small>Equipamentos na base</small>
         </article>
-        <article className="stat-tile">
+        <article className="metric-card">
           <span>Disponiveis</span>
           <strong>{availableCount}</strong>
-          <small>prontos para uso</small>
+          <small>Prontos para solicitacao</small>
         </article>
-        <article className="stat-tile">
-          <span>Pendentes</span>
-          <strong>{pendingCount}</strong>
-          <small>em avaliacao</small>
+        <article className="metric-card">
+          <span>Solicitados</span>
+          <strong>{requestedCount}</strong>
+          <small>Reservados no momento</small>
         </article>
-        <article className="stat-tile stat-tile-accent">
-          <span>Valor estimado</span>
-          <strong>{currencyFormatter(totalEstimatedValue)}</strong>
-          <small>capacidade consolidada</small>
+        <article className="metric-card">
+          <span>Em analise</span>
+          <strong>{maintenanceCount}</strong>
+          <small>Dependem de avaliacao</small>
         </article>
       </section>
 
-      <section className="action-board">
-        <button type="button" className="action-card action-card-primary" onClick={() => goTo("novo")}>
-          <PackagePlus size={20} />
-          <div>
-            <strong>Novo equipamento</strong>
-            <span>Cadastro com leitura mais limpa</span>
+      <section className="dashboard-grid">
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Resumo da operacao</span>
+              <h3>Indicadores principais</h3>
+            </div>
           </div>
-          <ChevronRight size={18} />
-        </button>
-        <button
-          type="button"
-          className="action-card"
-          onClick={() => goTo("equipamentos")}
-        >
-          <Search size={20} />
-          <div>
-            <strong>Consultar base</strong>
-            <span>Galeria com mais ritmo visual</span>
+          <div className="summary-list">
+            <div className="summary-row">
+              <span>Valor estimado total</span>
+              <strong>{currencyFormatter(totalEstimatedValue)}</strong>
+            </div>
+            <div className="summary-row">
+              <span>Solicitacoes pendentes</span>
+              <strong>{pendingCount}</strong>
+            </div>
+            <div className="summary-row">
+              <span>Municipios atendidos</span>
+              <strong>{new Set(equipments.map((item) => item.municipio)).size}</strong>
+            </div>
+            <div className="summary-row">
+              <span>Programas ativos</span>
+              <strong>{new Set(equipments.map((item) => item.programa)).size}</strong>
+            </div>
           </div>
-          <ChevronRight size={18} />
-        </button>
-        <button
-          type="button"
-          className="action-card"
-          onClick={() => goTo("solicitacoes")}
-        >
-          <ClipboardList size={20} />
-          <div>
-            <strong>Solicitacoes</strong>
-            <span>Painel administrativo organizado</span>
+        </article>
+
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Atalhos</span>
+              <h3>Acoes rapidas</h3>
+            </div>
           </div>
-          <ChevronRight size={18} />
-        </button>
+          <div className="quick-actions">
+            <button type="button" className="action-button primary" onClick={() => goTo("novo")}>
+              <PackagePlus size={16} />
+              Novo cadastro
+            </button>
+            <button type="button" className="action-button" onClick={() => goTo("equipamentos")}>
+              <Search size={16} />
+              Consultar base
+            </button>
+            <button type="button" className="action-button" onClick={() => goTo("solicitacoes")}>
+              <FileText size={16} />
+              Ver solicitacoes
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section className="dashboard-grid">
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Equipamentos recentes</span>
+              <h3>Base cadastrada</h3>
+            </div>
+          </div>
+          <div className="list-table">
+            {equipments.slice(0, 5).map((equipment) => (
+              <div key={equipment.id} className="list-row">
+                <div>
+                  <strong>{equipment.nome}</strong>
+                  <small>{equipment.programa}</small>
+                </div>
+                <div>
+                  <span>{equipment.municipio}</span>
+                  <small>{equipment.endereco}</small>
+                </div>
+                <div>
+                  <span className={`status-pill ${statusClass(equipment.status)}`}>
+                    {equipment.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Ultimas solicitacoes</span>
+              <h3>Fila administrativa</h3>
+            </div>
+          </div>
+          <div className="list-table">
+            {solicitations.slice(0, 5).map((item) => (
+              <div key={item.id} className="list-row">
+                <div>
+                  <strong>{item.equipamentoNome}</strong>
+                  <small>{item.nomeSolicitante}</small>
+                </div>
+                <div>
+                  <span>{dateFormatter(item.dataSolicitacao)}</span>
+                  <small>{item.localDestino}</small>
+                </div>
+                <div>
+                  <span className={`status-pill ${statusClass(item.decisaoAdmin)}`}>
+                    {item.decisaoAdmin}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
       </section>
     </PageFrame>
   );
@@ -353,6 +370,7 @@ function App() {
         equipment.programa,
         equipment.proprietario,
         equipment.endereco,
+        equipment.status,
       ]
         .join(" ")
         .toLowerCase()
@@ -467,20 +485,41 @@ function App() {
 
       {page === "novo" && (
         <PageFrame page="novo">
-          <section className="editor-layout">
-            <article className="editor-intro">
-              <span className="card-tag">Cadastro</span>
-              <h3>Uma tela mais editorial para um formulario que parecia burocratico.</h3>
-              <p>
-                Aqui o foco mudou para composicao, espacamento e hierarquia. O fluxo continua
-                o mesmo, mas a experiencia fica muito mais profissional.
-              </p>
+          <section className="form-layout">
+            <article className="panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-label">Orientacao</span>
+                  <h3>Cadastro operacional</h3>
+                </div>
+              </div>
+              <div className="info-stack">
+                <div className="info-item">
+                  <FileText size={16} />
+                  <span>Preencha dados contratuais, localizacao e programa vinculado.</span>
+                </div>
+                <div className="info-item">
+                  <MapPinned size={16} />
+                  <span>O endereco continua dependente do municipio selecionado.</span>
+                </div>
+                <div className="info-item">
+                  <ShieldCheck size={16} />
+                  <span>Novos registros entram como disponiveis por padrao.</span>
+                </div>
+              </div>
             </article>
 
-            <section className="form-panel">
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-label">Formulario</span>
+                  <h3>Novo equipamento</h3>
+                </div>
+              </div>
+
               <form className="form-grid" onSubmit={handleEquipmentSubmit}>
                 <label>
-                  Nome
+                  Nome do equipamento
                   <input
                     required
                     value={equipmentForm.nome}
@@ -501,7 +540,7 @@ function App() {
                   </select>
                 </label>
                 <label>
-                  Convenio termo
+                  Convenio ou termo
                   <input
                     required
                     value={equipmentForm.convenioTermo}
@@ -575,6 +614,14 @@ function App() {
                     ))}
                   </select>
                 </label>
+                <label>
+                  Anexos
+                  <input
+                    placeholder="Ex.: foto1.png, termo.pdf"
+                    value={equipmentForm.anexos}
+                    onChange={(event) => updateEquipmentForm("anexos", event.target.value)}
+                  />
+                </label>
                 <label className="span-2">
                   Descricao
                   <textarea
@@ -583,16 +630,8 @@ function App() {
                     onChange={(event) => updateEquipmentForm("descricao", event.target.value)}
                   />
                 </label>
-                <label className="span-2">
-                  Anexos
-                  <input
-                    placeholder="Ex.: foto1.png, termo.pdf"
-                    value={equipmentForm.anexos}
-                    onChange={(event) => updateEquipmentForm("anexos", event.target.value)}
-                  />
-                </label>
                 <div className="form-actions span-2">
-                  <button type="submit" className="cta-primary">
+                  <button type="submit" className="primary-button">
                     Salvar equipamento
                   </button>
                 </div>
@@ -606,91 +645,126 @@ function App() {
         <PageFrame
           page="equipamentos"
           actions={
-            <div className="page-search">
+            <div className="toolbar-search">
               <Search size={16} />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar por nome, municipio, endereco ou programa"
+                placeholder="Buscar por nome, municipio, programa, endereco ou status"
               />
             </div>
           }
         >
-          <section className="gallery-grid">
-            {filteredEquipments.map((equipment, index) => (
-              <article
-                key={equipment.id}
-                className={index === 0 ? "gallery-card gallery-card-large" : "gallery-card"}
-              >
-                <div className="gallery-head">
-                  <span className={`status-pill ${statusClass(equipment.status)}`}>
-                    {equipment.status}
-                  </span>
-                  <span className="gallery-program">{equipment.programa}</span>
-                </div>
-                <h3>{equipment.nome}</h3>
-                <p>{equipment.descricao}</p>
-                <div className="gallery-facts">
-                  <span>{equipment.municipio}</span>
-                  <span>{equipment.endereco}</span>
-                  <span>{currencyFormatter(equipment.valorEstimado)}</span>
-                </div>
-                <button type="button" className="gallery-action" onClick={() => setSelectedEquipment(equipment)}>
-                  <Send size={15} />
-                  Solicitar
-                </button>
-              </article>
-            ))}
+          <section className="panel">
+            <div className="panel-header">
+              <div>
+                <span className="section-label">Consulta</span>
+                <h3>Base de equipamentos</h3>
+              </div>
+            </div>
+
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Equipamento</th>
+                    <th>Programa</th>
+                    <th>Municipio</th>
+                    <th>Condicao</th>
+                    <th>Status</th>
+                    <th>Valor</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEquipments.map((equipment) => (
+                    <tr key={equipment.id}>
+                      <td>
+                        <div className="cell-stack">
+                          <strong>{equipment.nome}</strong>
+                          <span>{equipment.proprietario}</span>
+                        </div>
+                      </td>
+                      <td>{equipment.programa}</td>
+                      <td>
+                        <div className="cell-stack">
+                          <strong>{equipment.municipio}</strong>
+                          <span>{equipment.endereco}</span>
+                        </div>
+                      </td>
+                      <td>{equipment.condicao}</td>
+                      <td>
+                        <span className={`status-pill ${statusClass(equipment.status)}`}>
+                          {equipment.status}
+                        </span>
+                      </td>
+                      <td>{currencyFormatter(equipment.valorEstimado)}</td>
+                      <td className="cell-action">
+                        <button
+                          type="button"
+                          className="table-button"
+                          onClick={() => setSelectedEquipment(equipment)}
+                        >
+                          <Send size={14} />
+                          Solicitar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
         </PageFrame>
       )}
 
       {page === "solicitacoes" && (
         <PageFrame page="solicitacoes">
-          <section className="request-layout">
-            <article className="request-summary">
-              <span className="card-tag">Acompanhamento</span>
-              <h3>{solicitations.length} solicitacoes acompanhadas em uma leitura mais limpa.</h3>
-              <p>
-                O retorno administrativo agora aparece em uma estrutura mais elegante e mais
-                facil de escanear visualmente.
-              </p>
-            </article>
-
-            <section className="table-panel">
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Equipamento</th>
-                      <th>Solicitante</th>
-                      <th>Contato</th>
-                      <th>Destino</th>
-                      <th>Decisao</th>
-                      <th>Admin</th>
-                      <th>Observacoes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {solicitations.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.equipamentoNome}</td>
-                        <td>{item.nomeSolicitante}</td>
-                        <td>{item.contatoSolicitante}</td>
-                        <td>{item.localDestino}</td>
-                        <td>
-                          <span className={`status-pill ${statusClass(item.decisaoAdmin)}`}>
-                            {item.decisaoAdmin}
-                          </span>
-                        </td>
-                        <td>{item.nomeAdmin ?? "A definir"}</td>
-                        <td>{item.observacoes ?? "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <section className="panel">
+            <div className="panel-header">
+              <div>
+                <span className="section-label">Acompanhamento</span>
+                <h3>Solicitacoes registradas</h3>
               </div>
-            </section>
+            </div>
+
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Equipamento</th>
+                    <th>Solicitante</th>
+                    <th>Destino</th>
+                    <th>Status</th>
+                    <th>Administrador</th>
+                    <th>Observacoes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {solicitations.map((item) => (
+                    <tr key={item.id}>
+                      <td>{dateFormatter(item.dataSolicitacao)}</td>
+                      <td>{item.equipamentoNome}</td>
+                      <td>
+                        <div className="cell-stack">
+                          <strong>{item.nomeSolicitante}</strong>
+                          <span>{item.contatoSolicitante}</span>
+                        </div>
+                      </td>
+                      <td>{item.localDestino}</td>
+                      <td>
+                        <span className={`status-pill ${statusClass(item.decisaoAdmin)}`}>
+                          {item.decisaoAdmin}
+                        </span>
+                      </td>
+                      <td>{item.nomeAdmin ?? "A definir"}</td>
+                      <td>{item.observacoes ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
         </PageFrame>
       )}
@@ -700,13 +774,13 @@ function App() {
           <div className="modal-card">
             <div className="modal-header">
               <div>
-                <span className="page-kicker">Solicitacao</span>
+                <span className="section-label">Nova solicitacao</span>
                 <h3>{selectedEquipment.nome}</h3>
-                <p>Preencha os dados para registrar a solicitacao do equipamento.</p>
+                <p>Preencha os dados do solicitante para registrar o pedido.</p>
               </div>
               <button
                 type="button"
-                className="cta-ghost"
+                className="secondary-button"
                 onClick={() => setSelectedEquipment(null)}
               >
                 Fechar
@@ -725,7 +799,7 @@ function App() {
                 />
               </label>
               <label>
-                Contato do solicitante
+                Contato
                 <input
                   required
                   value={solicitationForm.contatoSolicitante}
@@ -735,7 +809,7 @@ function App() {
                 />
               </label>
               <label className="span-2">
-                Local destino
+                Local de destino
                 <input
                   required
                   value={solicitationForm.localDestino}
@@ -756,8 +830,8 @@ function App() {
                 />
               </label>
               <div className="form-actions span-2">
-                <button type="submit" className="cta-primary">
-                  Enviar solicitacao
+                <button type="submit" className="primary-button">
+                  Registrar solicitacao
                 </button>
               </div>
             </form>
