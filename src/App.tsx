@@ -2,13 +2,17 @@ import {
   Boxes,
   ClipboardList,
   FileText,
+  MapPinned,
   PackagePlus,
   Search,
   Send,
   ShieldCheck,
+  TrendingUp,
   Warehouse,
 } from "lucide-react";
+import "leaflet/dist/leaflet.css";
 import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
 import logo1 from "../assets/logo_1.jpeg";
 import logo2 from "../assets/logo_2.jpeg";
 import { api } from "./api";
@@ -104,11 +108,11 @@ function formatPhone(value: string) {
   return `${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
-const municipalityPositions: Record<string, { x: number; y: number }> = {
-  Salvador: { x: 82, y: 68 },
-  "Feira de Santana": { x: 60, y: 44 },
-  Ilheus: { x: 70, y: 76 },
-  Juazeiro: { x: 16, y: 18 },
+const municipalityCoordinates: Record<string, { lat: number; lng: number }> = {
+  Salvador: { lat: -12.9777, lng: -38.5016 },
+  "Feira de Santana": { lat: -12.2664, lng: -38.9663 },
+  Ilheus: { lat: -14.7936, lng: -39.0469 },
+  Juazeiro: { lat: -9.4116, lng: -40.4980 },
 };
 
 function buildPieStyle(values: number[]) {
@@ -133,6 +137,26 @@ function buildPieStyle(values: number[]) {
   return {
     background: `conic-gradient(${slices.join(", ")})`,
   };
+}
+
+function buildMapCenter(equipments: Equipment[]) {
+  const points = equipments
+    .map((item) => municipalityCoordinates[item.municipio])
+    .filter(Boolean);
+
+  if (points.length === 0) {
+    return { lat: -12.5, lng: -39.4 };
+  }
+
+  const lat = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
+  const lng = points.reduce((sum, point) => sum + point.lng, 0) / points.length;
+  return { lat, lng };
+}
+
+function statusAccent(status: Equipment["status"]) {
+  if (status === "Disponivel") return "#1f7a1f";
+  if (status === "Solicitado") return "#d92d20";
+  return "#f59e0b";
 }
 
 function AppShell({
@@ -318,6 +342,18 @@ function DashboardPage({
     requestedCount,
     approvedCount,
   ]);
+  const mapCenter = buildMapCenter(filteredEquipments);
+  const solicitationPendingCount = filteredSolicitations.filter(
+    (item) => item.decisaoAdmin === "Pendente",
+  ).length;
+  const municipalityMapData = equipmentByMunicipio
+    .map(([municipio, count]) => ({
+      municipio,
+      count,
+      coordinates: municipalityCoordinates[municipio],
+      statuses: filteredEquipments.filter((item) => item.municipio === municipio),
+    }))
+    .filter((item) => item.coordinates);
 
   return (
     <PageFrame page="dashboard">
@@ -346,6 +382,50 @@ function DashboardPage({
           <span>Doados</span>
           <strong>{donatedCount}</strong>
           <small>Qtd_Doados</small>
+        </article>
+      </section>
+
+      <section className="dashboard-hero">
+        <article className="dashboard-hero-card">
+          <div>
+            <span className="section-label">Painel analitico</span>
+            <h3>Leitura operacional da base em tempo real</h3>
+            <p>
+              O painel consolida estoque, solicitações e distribuição territorial com
+              foco em acompanhamento rápido da operação.
+            </p>
+          </div>
+          <div className="dashboard-hero-metrics">
+            <div>
+              <span>Solicitacoes pendentes</span>
+              <strong>{solicitationPendingCount}</strong>
+            </div>
+            <div>
+              <span>Municipios mapeados</span>
+              <strong>{equipmentByMunicipio.length}</strong>
+            </div>
+            <div>
+              <span>Ticket medio</span>
+              <strong>
+                {currencyFormatter(
+                  filteredEquipments.length
+                    ? totalEstimatedValue / filteredEquipments.length
+                    : 0,
+                )}
+              </strong>
+            </div>
+          </div>
+        </article>
+        <article className="dashboard-trend-card">
+          <span className="section-label">Resumo rapido</span>
+          <div className="trend-row">
+            <TrendingUp size={18} />
+            <strong>{filteredEquipments.length} registros ativos no recorte atual</strong>
+          </div>
+          <p>
+            Use os filtros abaixo para comparar municípios, sistemas produtivos e
+            programas sem sair do painel.
+          </p>
         </article>
       </section>
 
@@ -396,39 +476,56 @@ function DashboardPage({
         <article className="panel dashboard-map-panel">
           <div className="panel-header">
             <div>
-              <span className="section-label">Mapa</span>
-              <h3>Distribuicao por municipio</h3>
+              <span className="section-label">Mapa territorial</span>
+              <h3>Distribuicao real dos equipamentos</h3>
+            </div>
+            <div className="map-panel-tag">
+              <MapPinned size={16} />
+              Bahia
             </div>
           </div>
           <div className="map-legend">
             <span><i className="legend-dot stock" />Estoque</span>
             <span><i className="legend-dot requested" />Solicitado</span>
             <span><i className="legend-dot approved" />Aprovado</span>
+            <span><i className="legend-dot maintenance" />Em analise</span>
           </div>
           <div className="map-stage">
-            <svg viewBox="0 0 100 100" className="map-svg" aria-hidden="true">
-              <path
-                d="M10 16 L26 10 L41 14 L55 12 L71 18 L86 30 L92 48 L88 66 L78 82 L58 90 L38 88 L21 76 L12 58 L8 38 Z"
-                className="map-shape"
+            <MapContainer
+              center={[mapCenter.lat, mapCenter.lng]}
+              zoom={7}
+              scrollWheelZoom
+              className="leaflet-map"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <path d="M22 26 L42 24 L58 34 L52 50 L34 54 L20 44 Z" className="map-area" />
-              <path d="M54 58 L72 52 L82 64 L74 80 L56 78 Z" className="map-area is-alt" />
-            </svg>
-            {equipmentByMunicipio.map(([municipio, count]) => {
-              const position = municipalityPositions[municipio];
-              if (!position) return null;
-
-              return (
-                <div
-                  key={municipio}
-                  className="map-point"
-                  style={{ left: `${position.x}%`, top: `${position.y}%` }}
-                >
-                  <span>{count}</span>
-                  <small>{municipio}</small>
-                </div>
-              );
-            })}
+              {municipalityMapData.map((item) => {
+                const status = item.statuses[0]?.status ?? "Disponivel";
+                return (
+                  <CircleMarker
+                    key={item.municipio}
+                    center={[item.coordinates.lat, item.coordinates.lng]}
+                    radius={Math.max(10, item.count * 4)}
+                    pathOptions={{
+                      color: "#ffffff",
+                      weight: 2,
+                      fillColor: statusAccent(status),
+                      fillOpacity: 0.9,
+                    }}
+                  >
+                    <Popup>
+                      <strong>{item.municipio}</strong>
+                      <br />
+                      Equipamentos: {item.count}
+                      <br />
+                      Status em destaque: {status}
+                    </Popup>
+                  </CircleMarker>
+                );
+              })}
+            </MapContainer>
           </div>
         </article>
 
