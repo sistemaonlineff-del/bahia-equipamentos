@@ -611,7 +611,7 @@ function DashboardPage({
         </button>
       </section>
 
-      <section className="dashboard-visual-grid">
+      <section className="dashboard-top-grid">
         <article className="panel dashboard-map-panel">
           <div className="panel-header">
             <div>
@@ -672,74 +672,74 @@ function DashboardPage({
           </div>
         </article>
 
-        <section className="dashboard-side-grid">
-          <article className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-label">Valor estimado</span>
-                <h3>Composicao por status</h3>
-              </div>
+        <article className="panel dashboard-donut-panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Valor estimado</span>
+              <h3>Composicao por status</h3>
             </div>
-            <DonutChart
-              items={[
-                {
-                  label: "Estoque",
-                  value: availableCount,
-                  color: statusPalette.estoque,
-                  onClick: () => toggleStatusFilter("Disponivel"),
-                },
-                {
-                  label: "Em analise",
-                  value: maintenanceCount,
-                  color: statusPalette.analise,
-                  onClick: () => toggleStatusFilter("Em analise"),
-                },
-                {
-                  label: "Solicitado",
-                  value: requestedCount,
-                  color: statusPalette.solicitado,
-                  onClick: () => toggleStatusFilter("Solicitado"),
-                },
-                {
-                  label: "Aprovado",
-                  value: approvedCount,
-                  color: statusPalette.aprovado,
-                  onClick: () => toggleDecisionFilter("Aprovado"),
-                },
-              ]}
-            />
-          </article>
+          </div>
+          <DonutChart
+            items={[
+              {
+                label: "Estoque",
+                value: availableCount,
+                color: statusPalette.estoque,
+                onClick: () => toggleStatusFilter("Disponivel"),
+              },
+              {
+                label: "Em analise",
+                value: maintenanceCount,
+                color: statusPalette.analise,
+                onClick: () => toggleStatusFilter("Em analise"),
+              },
+              {
+                label: "Solicitado",
+                value: requestedCount,
+                color: statusPalette.solicitado,
+                onClick: () => toggleStatusFilter("Solicitado"),
+              },
+              {
+                label: "Aprovado",
+                value: approvedCount,
+                color: statusPalette.aprovado,
+                onClick: () => toggleDecisionFilter("Aprovado"),
+              },
+            ]}
+          />
+        </article>
+      </section>
 
-          <article className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-label">Equipamentos</span>
-                <h3>Por sistema produtivo</h3>
-              </div>
+      <section className="dashboard-bottom-grid">
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Equipamentos</span>
+              <h3>Por sistema produtivo</h3>
             </div>
-            <BarChartList
-              items={equipmentBySystem}
-              maxValue={maxSystemCount}
-              activeKey={sistemaFilter}
-              onSelect={toggleSistemaFilter}
-            />
-          </article>
+          </div>
+          <BarChartList
+            items={equipmentBySystem}
+            maxValue={maxSystemCount}
+            activeKey={sistemaFilter}
+            onSelect={toggleSistemaFilter}
+          />
+        </article>
 
-          <article className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-label">Municipios</span>
-                <h3>Equipamentos por municipio</h3>
-              </div>
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Municipios</span>
+              <h3>Equipamentos por municipio</h3>
             </div>
-            <BarChartList
-              items={equipmentByMunicipio}
-              maxValue={maxMunicipioCount}
-              activeKey={municipioFilter}
-              onSelect={toggleMunicipioFilter}
-            />
-          </article>
-        </section>
+          </div>
+          <BarChartList
+            items={equipmentByMunicipio}
+            maxValue={maxMunicipioCount}
+            activeKey={municipioFilter}
+            onSelect={toggleMunicipioFilter}
+          />
+        </article>
       </section>
 
       <section className="panel">
