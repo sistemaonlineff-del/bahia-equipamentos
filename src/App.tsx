@@ -189,6 +189,113 @@ function municipalityAccent(
   return statusPalette.estoque;
 }
 
+function DonutChart({
+  items,
+}: {
+  items: { label: string; value: number; color: string; onClick: () => void }[];
+}) {
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const radius = 62;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <div className="donut-layout">
+      <div className="donut-figure">
+        <svg viewBox="0 0 180 180" className="donut-svg" aria-hidden="true">
+          <circle cx="90" cy="90" r={radius} className="donut-track" />
+          {total > 0
+            ? items.map((item) => {
+                const dash = (item.value / total) * circumference;
+                const segment = (
+                  <circle
+                    key={item.label}
+                    cx="90"
+                    cy="90"
+                    r={radius}
+                    className="donut-segment"
+                    style={{
+                      stroke: item.color,
+                      strokeDasharray: `${dash} ${circumference - dash}`,
+                      strokeDashoffset: -offset,
+                    }}
+                  />
+                );
+                offset += dash;
+                return segment;
+              })
+            : null}
+        </svg>
+        <div className="donut-center">
+          <strong>{total}</strong>
+          <span>registros</span>
+        </div>
+      </div>
+
+      <div className="donut-labels">
+        {items.map((item) => {
+          const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
+          return (
+            <button
+              key={item.label}
+              type="button"
+              className="donut-label"
+              onClick={item.onClick}
+            >
+              <i className="legend-dot" style={{ background: item.color }} />
+              <div className="donut-label-copy">
+                <strong>{item.label}</strong>
+                <span>{item.value} itens</span>
+              </div>
+              <b>{percentage}%</b>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BarChartList({
+  items,
+  maxValue,
+  activeKey,
+  onSelect,
+}: {
+  items: [string, number][];
+  maxValue: number;
+  activeKey: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div className="chart-list">
+      {items.length > 0 ? (
+        items.map(([label, value]) => (
+          <button
+            key={label}
+            type="button"
+            className={`chart-row ${activeKey === label ? "active" : ""}`}
+            onClick={() => onSelect(label)}
+          >
+            <div className="chart-row-head">
+              <strong>{label}</strong>
+              <span>{value} equipamento{value > 1 ? "s" : ""}</span>
+            </div>
+            <div className="chart-row-body">
+              <div className="chart-row-track">
+                <span style={{ width: `${(value / maxValue) * 100}%` }} />
+              </div>
+              <b>{value}</b>
+            </div>
+          </button>
+        ))
+      ) : (
+        <div className="empty-state">Sem dados para exibir.</div>
+      )}
+    </div>
+  );
+}
+
 function AppShell({
   page,
   setPage,
@@ -371,12 +478,6 @@ function DashboardPage({
 
   const maxSystemCount = Math.max(...equipmentBySystem.map(([, count]) => count), 1);
   const maxMunicipioCount = Math.max(...equipmentByMunicipio.map(([, count]) => count), 1);
-  const pieStyle = buildPieStyle([
-    availableCount,
-    maintenanceCount,
-    requestedCount,
-    approvedCount,
-  ]);
   const mapCenter = buildMapCenter(filteredEquipments);
   const municipalityMapData = equipmentByMunicipio
     .map(([municipio, count]) => ({
@@ -579,15 +680,34 @@ function DashboardPage({
                 <h3>Composicao por status</h3>
               </div>
             </div>
-            <div className="pie-layout">
-              <div className="pie-chart" style={pieStyle} />
-              <div className="pie-legend">
-                <button type="button" className="legend-button" onClick={() => toggleStatusFilter("Disponivel")}><i className="legend-dot stock" />Estoque: {availableCount}</button>
-                <button type="button" className="legend-button" onClick={() => toggleStatusFilter("Em analise")}><i className="legend-dot maintenance" />Em analise: {maintenanceCount}</button>
-                <button type="button" className="legend-button" onClick={() => toggleStatusFilter("Solicitado")}><i className="legend-dot requested" />Solicitado: {requestedCount}</button>
-                <button type="button" className="legend-button" onClick={() => toggleDecisionFilter("Aprovado")}><i className="legend-dot approved" />Aprovado: {approvedCount}</button>
-              </div>
-            </div>
+            <DonutChart
+              items={[
+                {
+                  label: "Estoque",
+                  value: availableCount,
+                  color: statusPalette.estoque,
+                  onClick: () => toggleStatusFilter("Disponivel"),
+                },
+                {
+                  label: "Em analise",
+                  value: maintenanceCount,
+                  color: statusPalette.analise,
+                  onClick: () => toggleStatusFilter("Em analise"),
+                },
+                {
+                  label: "Solicitado",
+                  value: requestedCount,
+                  color: statusPalette.solicitado,
+                  onClick: () => toggleStatusFilter("Solicitado"),
+                },
+                {
+                  label: "Aprovado",
+                  value: approvedCount,
+                  color: statusPalette.aprovado,
+                  onClick: () => toggleDecisionFilter("Aprovado"),
+                },
+              ]}
+            />
           </article>
 
           <article className="panel">
@@ -597,28 +717,12 @@ function DashboardPage({
                 <h3>Por sistema produtivo</h3>
               </div>
             </div>
-            <div className="bar-list">
-              {equipmentBySystem.length > 0 ? (
-                equipmentBySystem.map(([system, count]) => (
-                  <button
-                    key={system}
-                    type="button"
-                    className={`bar-row ${sistemaFilter === system ? "active" : ""}`}
-                    onClick={() => toggleSistemaFilter(system)}
-                  >
-                    <div className="bar-copy">
-                      <strong>{system}</strong>
-                      <span>{count} equipamentos</span>
-                    </div>
-                    <div className="bar-track">
-                      <span style={{ width: `${(count / maxSystemCount) * 100}%` }} />
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="empty-state">Sem dados para exibir.</div>
-              )}
-            </div>
+            <BarChartList
+              items={equipmentBySystem}
+              maxValue={maxSystemCount}
+              activeKey={sistemaFilter}
+              onSelect={toggleSistemaFilter}
+            />
           </article>
 
           <article className="panel">
@@ -628,29 +732,12 @@ function DashboardPage({
                 <h3>Equipamentos por municipio</h3>
               </div>
             </div>
-            <div className="municipio-bar-list">
-              {equipmentByMunicipio.length > 0 ? (
-                equipmentByMunicipio.map(([municipio, count]) => (
-                  <button
-                    key={municipio}
-                    type="button"
-                    className={`municipio-bar-row ${municipioFilter === municipio ? "active" : ""}`}
-                    onClick={() => toggleMunicipioFilter(municipio)}
-                  >
-                    <div className="municipio-bar-copy">
-                      <strong>{municipio}</strong>
-                      <span>{count} equipamento{count > 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="municipio-bar-track">
-                      <span style={{ width: `${(count / maxMunicipioCount) * 100}%` }} />
-                    </div>
-                    <strong>{count}</strong>
-                  </button>
-                ))
-              ) : (
-                <div className="empty-state">Sem dados para exibir.</div>
-              )}
-            </div>
+            <BarChartList
+              items={equipmentByMunicipio}
+              maxValue={maxMunicipioCount}
+              activeKey={municipioFilter}
+              onSelect={toggleMunicipioFilter}
+            />
           </article>
         </section>
       </section>
