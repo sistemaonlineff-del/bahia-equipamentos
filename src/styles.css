@@ -909,6 +909,17 @@ tbody tr:hover {
   text-align: right;
 }
 
+.table-icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+.table-empty {
+  color: var(--muted);
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -951,6 +962,29 @@ tbody tr:hover {
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: 0 20px 44px rgba(15, 32, 55, 0.18);
+}
+
+.attachment-modal {
+  width: min(980px, 100%);
+}
+
+.attachment-preview {
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.attachment-fallback {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.attachment-link {
+  text-decoration: none;
 }
 
 .modal-header {

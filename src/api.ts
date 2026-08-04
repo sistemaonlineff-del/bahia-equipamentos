@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { mockEquipments, mockSolicitations, optionCatalog } from "./data/mock-data";
-import type { Equipment, OptionCatalog, Solicitation } from "./types/domain";
+import type { Equipment, EquipmentAttachment, OptionCatalog, Solicitation } from "./types/domain";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -98,7 +98,12 @@ function mapEquipmentRecord(record: any): Equipment {
     programa: record.programas?.nome ?? "",
     descricao: record.descricao ?? "",
     anexos: Array.isArray(record.equipamento_anexos)
-      ? record.equipamento_anexos.map((item: any) => item.nome_arquivo)
+      ? record.equipamento_anexos.map(
+          (item: any): EquipmentAttachment => ({
+            name: item.nome_arquivo ?? "",
+            url: item.caminho_storage ?? "",
+          }),
+        )
       : [],
     status: record.status ?? "Disponivel",
   };
@@ -147,7 +152,7 @@ export const api = {
         municipios(nome),
         enderecos(nome),
         programas(nome),
-        equipamento_anexos(nome_arquivo)
+        equipamento_anexos(nome_arquivo, caminho_storage)
       `)
       .order("created_at", { ascending: false });
 
@@ -246,10 +251,10 @@ export const api = {
 
     if (payload.anexos.length > 0) {
       const { error: attachmentError } = await supabase.from("equipamento_anexos").insert(
-        payload.anexos.map((nomeArquivo) => ({
+        payload.anexos.map((attachment) => ({
           equipamento_id: insertedEquipment.id,
-          nome_arquivo: nomeArquivo,
-          caminho_storage: nomeArquivo,
+          nome_arquivo: attachment.name,
+          caminho_storage: attachment.url,
         })),
       );
 
@@ -263,7 +268,10 @@ export const api = {
       item: {
         ...mapEquipmentRecord({
           ...insertedEquipment,
-          equipamento_anexos: payload.anexos.map((nomeArquivo) => ({ nome_arquivo: nomeArquivo })),
+          equipamento_anexos: payload.anexos.map((attachment) => ({
+            nome_arquivo: attachment.name,
+            caminho_storage: attachment.url,
+          })),
         }),
       },
     };

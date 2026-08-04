@@ -31,7 +31,7 @@ export const mockEquipments: Equipment[] = [
     endereco: "Carnaiba do Sertao",
     programa: "Bahia Produtiva",
     descricao: "Equipamento destinado ao apoio da producao e preparo do solo.",
-    anexos: ["laudo-tecnico.pdf", "foto-trator.png"],
+    anexos: [],
     status: "Disponivel",
   },
   {
@@ -46,7 +46,7 @@ export const mockEquipments: Equipment[] = [
     endereco: "Banco Central",
     programa: "Infraestrutura Rural",
     descricao: "Unidade para conservacao de produtos pereciveis e pescado.",
-    anexos: ["manual.pdf"],
+    anexos: [],
     status: "Solicitado",
   },
   {
@@ -61,7 +61,7 @@ export const mockEquipments: Equipment[] = [
     endereco: "Humildes",
     programa: "Mais Gestao",
     descricao: "Sistema de irrigacao para area demonstrativa e apoio comunitario.",
-    anexos: ["orcamento.xlsx"],
+    anexos: [],
     status: "Em analise",
   },
 ];

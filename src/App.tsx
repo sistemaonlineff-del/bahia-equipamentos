@@ -4,6 +4,7 @@ import {
   FileText,
   MapPinned,
   PackagePlus,
+  Paperclip,
   Search,
   Send,
   ShieldCheck,
@@ -17,7 +18,7 @@ import logo2 from "../assets/logo_2.jpeg";
 import { api } from "./api";
 import { mockEquipments, mockSolicitations, optionCatalog } from "./data/mock-data";
 import "./styles.css";
-import type { Equipment, Solicitation } from "./types/domain";
+import type { Equipment, EquipmentAttachment, Solicitation } from "./types/domain";
 
 type Page = "dashboard" | "novo" | "equipamentos" | "solicitacoes";
 
@@ -168,6 +169,15 @@ function statusAccent(status: Equipment["status"]) {
   if (status === "Disponivel") return statusPalette.estoque;
   if (status === "Solicitado") return statusPalette.solicitado;
   return statusPalette.analise;
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 function municipalityAccent(
@@ -407,10 +417,12 @@ function DashboardPage({
   equipments,
   solicitations,
   goTo,
+  openAttachment,
 }: {
   equipments: Equipment[];
   solicitations: Solicitation[];
   goTo: (page: Page) => void;
+  openAttachment: (attachment: EquipmentAttachment) => void;
 }) {
   const [equipmentFilter, setEquipmentFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -769,6 +781,7 @@ function DashboardPage({
                 <th>Status</th>
                 <th>Sistema</th>
                 <th>Municipio</th>
+                <th>Anexo</th>
               </tr>
             </thead>
             <tbody>
@@ -784,6 +797,20 @@ function DashboardPage({
                   </td>
                   <td>{equipment.sistemaProdutivo}</td>
                   <td>{equipment.municipio}</td>
+                  <td className="cell-action">
+                    {equipment.anexos.length > 0 ? (
+                      <button
+                        type="button"
+                        className="table-icon-button"
+                        title={`Abrir anexo ${equipment.anexos[0].name}`}
+                        onClick={() => openAttachment(equipment.anexos[0])}
+                      >
+                        <Paperclip size={15} />
+                      </button>
+                    ) : (
+                      <span className="table-empty">-</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -802,6 +829,7 @@ function App() {
   const [solicitationForm, setSolicitationForm] = useState<SolicitationFormState>(initialSolicitationForm);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewAttachment, setPreviewAttachment] = useState<EquipmentAttachment | null>(null);
   const [search, setSearch] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
@@ -902,6 +930,13 @@ function App() {
   async function handleEquipmentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const attachmentPayload = await Promise.all(
+      selectedFiles.map(async (file) => ({
+        name: file.name,
+        url: await readFileAsDataUrl(file),
+      })),
+    );
+
     const newEquipment = {
       nome: equipmentForm.nome,
       sistemaProdutivo: equipmentForm.sistemaProdutivo,
@@ -913,7 +948,7 @@ function App() {
       endereco: equipmentForm.endereco,
       programa: equipmentForm.programa,
       descricao: equipmentForm.descricao,
-      anexos: selectedFiles.map((file) => file.name),
+      anexos: attachmentPayload,
       status: "Disponivel" as const,
     };
 
@@ -981,6 +1016,7 @@ function App() {
           equipments={equipments}
           solicitations={solicitations}
           goTo={setPage}
+          openAttachment={setPreviewAttachment}
         />
       )}
 
@@ -1327,6 +1363,47 @@ function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {previewAttachment && (
+        <div className="modal-backdrop" role="presentation">
+          <div className="modal-card attachment-modal">
+            <div className="modal-header">
+              <div>
+                <span className="section-label">Anexo</span>
+                <h3>{previewAttachment.name}</h3>
+                <p>Visualizacao do arquivo anexado ao equipamento.</p>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setPreviewAttachment(null)}
+              >
+                Fechar
+              </button>
+            </div>
+
+            {previewAttachment.url.startsWith("data:image") ? (
+              <img
+                src={previewAttachment.url}
+                alt={previewAttachment.name}
+                className="attachment-preview"
+              />
+            ) : (
+              <div className="attachment-fallback">
+                <p>Este anexo nao possui visualizacao embutida.</p>
+                <a
+                  href={previewAttachment.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="primary-button attachment-link"
+                >
+                  Abrir arquivo
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}

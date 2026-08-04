@@ -1,5 +1,10 @@
 export type DecisionStatus = "Aprovado" | "Recusado" | "Pendente";
 
+export type EquipmentAttachment = {
+  name: string;
+  url: string;
+};
+
 export type Equipment = {
   id: string;
   nome: string;
@@ -12,7 +17,7 @@ export type Equipment = {
   endereco: string;
   programa: string;
   descricao: string;
-  anexos: string[];
+  anexos: EquipmentAttachment[];
   status: "Disponivel" | "Em analise" | "Solicitado";
 };
 
