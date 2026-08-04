@@ -104,6 +104,37 @@ function formatPhone(value: string) {
   return `${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+const municipalityPositions: Record<string, { x: number; y: number }> = {
+  Salvador: { x: 82, y: 68 },
+  "Feira de Santana": { x: 60, y: 44 },
+  Ilheus: { x: 70, y: 76 },
+  Juazeiro: { x: 16, y: 18 },
+};
+
+function buildPieStyle(values: number[]) {
+  const total = values.reduce((sum, value) => sum + value, 0);
+
+  if (!total) {
+    return {
+      background:
+        "conic-gradient(#d7dee7 0deg 360deg)",
+    };
+  }
+
+  const colors = ["#1f7a1f", "#005a9c", "#d92d20", "#f59e0b"];
+  let offset = 0;
+  const slices = values.map((value, index) => {
+    const angle = (value / total) * 360;
+    const slice = `${colors[index]} ${offset}deg ${offset + angle}deg`;
+    offset += angle;
+    return slice;
+  });
+
+  return {
+    background: `conic-gradient(${slices.join(", ")})`,
+  };
+}
+
 function AppShell({
   page,
   setPage,
@@ -220,76 +251,265 @@ function DashboardPage({
   solicitations: Solicitation[];
   goTo: (page: Page) => void;
 }) {
-  const availableCount = equipments.filter((item) => item.status === "Disponivel").length;
-  const requestedCount = equipments.filter((item) => item.status === "Solicitado").length;
-  const maintenanceCount = equipments.filter((item) => item.status === "Em analise").length;
-  const totalEstimatedValue = equipments.reduce(
+  const [equipmentFilter, setEquipmentFilter] = useState("Todos");
+  const [statusFilter, setStatusFilter] = useState("Todos");
+  const [municipioFilter, setMunicipioFilter] = useState("Todos");
+  const [sistemaFilter, setSistemaFilter] = useState("Todos");
+  const [programaFilter, setProgramaFilter] = useState("Todos");
+
+  const filterOptions = useMemo(() => {
+    return {
+      equipamentos: ["Todos", ...new Set(equipments.map((item) => item.nome))],
+      status: ["Todos", ...new Set(equipments.map((item) => item.status))],
+      municipios: ["Todos", ...new Set(equipments.map((item) => item.municipio))],
+      sistemas: ["Todos", ...new Set(equipments.map((item) => item.sistemaProdutivo))],
+      programas: ["Todos", ...new Set(equipments.map((item) => item.programa))],
+    };
+  }, [equipments]);
+
+  const filteredEquipments = useMemo(() => {
+    return equipments.filter((item) => {
+      return (
+        (equipmentFilter === "Todos" || item.nome === equipmentFilter) &&
+        (statusFilter === "Todos" || item.status === statusFilter) &&
+        (municipioFilter === "Todos" || item.municipio === municipioFilter) &&
+        (sistemaFilter === "Todos" || item.sistemaProdutivo === sistemaFilter) &&
+        (programaFilter === "Todos" || item.programa === programaFilter)
+      );
+    });
+  }, [equipmentFilter, equipments, municipioFilter, programaFilter, sistemaFilter, statusFilter]);
+
+  const filteredEquipmentIds = useMemo(() => {
+    return new Set(filteredEquipments.map((item) => item.id));
+  }, [filteredEquipments]);
+
+  const filteredSolicitations = useMemo(() => {
+    return solicitations.filter((item) => filteredEquipmentIds.has(item.equipamentoId));
+  }, [filteredEquipmentIds, solicitations]);
+
+  const availableCount = filteredEquipments.filter((item) => item.status === "Disponivel").length;
+  const requestedCount = filteredEquipments.filter((item) => item.status === "Solicitado").length;
+  const maintenanceCount = filteredEquipments.filter((item) => item.status === "Em analise").length;
+  const approvedCount = filteredSolicitations.filter((item) => item.decisaoAdmin === "Aprovado").length;
+  const donatedCount = 0;
+  const totalEstimatedValue = filteredEquipments.reduce(
     (total, item) => total + Number(item.valorEstimado || 0),
     0,
   );
-  const pendingCount = solicitations.filter((item) => item.decisaoAdmin === "Pendente").length;
+  const equipmentBySystem = Array.from(
+    filteredEquipments.reduce((map, item) => {
+      map.set(item.sistemaProdutivo, (map.get(item.sistemaProdutivo) ?? 0) + 1);
+      return map;
+    }, new Map<string, number>()),
+  ).sort((a, b) => b[1] - a[1]);
+
+  const equipmentByMunicipio = Array.from(
+    filteredEquipments.reduce((map, item) => {
+      map.set(item.municipio, (map.get(item.municipio) ?? 0) + 1);
+      return map;
+    }, new Map<string, number>()),
+  ).sort((a, b) => b[1] - a[1]);
+
+  const maxSystemCount = Math.max(...equipmentBySystem.map(([, count]) => count), 1);
+  const maxMunicipioCount = Math.max(...equipmentByMunicipio.map(([, count]) => count), 1);
+  const pieStyle = buildPieStyle([
+    availableCount,
+    maintenanceCount,
+    requestedCount,
+    approvedCount,
+  ]);
 
   return (
     <PageFrame page="dashboard">
-      <section className="metric-grid">
-        <article className="metric-card">
-          <span>Total cadastrado</span>
-          <strong>{equipments.length}</strong>
-          <small>Equipamentos na base</small>
-        </article>
-        <article className="metric-card">
-          <span>Disponiveis</span>
+      <section className="dashboard-cards">
+        <article className="dashboard-stat dashboard-stat-stock">
+          <span>Estoque</span>
           <strong>{availableCount}</strong>
-          <small>Prontos para solicitacao</small>
+          <small>Qtd_Estoque</small>
         </article>
-        <article className="metric-card">
+        <article className="dashboard-stat dashboard-stat-requested">
           <span>Solicitados</span>
           <strong>{requestedCount}</strong>
-          <small>Reservados no momento</small>
+          <small>Qtd_Solicitados</small>
         </article>
-        <article className="metric-card">
-          <span>Em analise</span>
-          <strong>{maintenanceCount}</strong>
-          <small>Dependem de avaliacao</small>
+        <article className="dashboard-stat dashboard-stat-approved">
+          <span>Aprovados</span>
+          <strong>{approvedCount}</strong>
+          <small>Qtd_Aprovados</small>
+        </article>
+        <article className="dashboard-stat dashboard-stat-value">
+          <span>R$ Valor Estimado</span>
+          <strong>{currencyFormatter(totalEstimatedValue)}</strong>
+          <small>Total da base filtrada</small>
+        </article>
+        <article className="dashboard-stat dashboard-stat-donated">
+          <span>Doados</span>
+          <strong>{donatedCount}</strong>
+          <small>Qtd_Doados</small>
         </article>
       </section>
 
-      <section className="dashboard-grid">
-        <article className="panel">
+      <section className="dashboard-filters">
+        <label>
+          Equipamento
+          <select value={equipmentFilter} onChange={(event) => setEquipmentFilter(event.target.value)}>
+            {filterOptions.equipamentos.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Status
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            {filterOptions.status.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Municipio
+          <select value={municipioFilter} onChange={(event) => setMunicipioFilter(event.target.value)}>
+            {filterOptions.municipios.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Sistema
+          <select value={sistemaFilter} onChange={(event) => setSistemaFilter(event.target.value)}>
+            {filterOptions.sistemas.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Projetos
+          <select value={programaFilter} onChange={(event) => setProgramaFilter(event.target.value)}>
+            {filterOptions.programas.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+      </section>
+
+      <section className="dashboard-visual-grid">
+        <article className="panel dashboard-map-panel">
           <div className="panel-header">
             <div>
-              <span className="section-label">Resumo da operacao</span>
-              <h3>Indicadores principais</h3>
+              <span className="section-label">Mapa</span>
+              <h3>Distribuicao por municipio</h3>
             </div>
           </div>
-          <div className="summary-list">
-            <div className="summary-row">
-              <span>Valor estimado total</span>
-              <strong>{currencyFormatter(totalEstimatedValue)}</strong>
-            </div>
-            <div className="summary-row">
-              <span>Solicitacoes pendentes</span>
-              <strong>{pendingCount}</strong>
-            </div>
-            <div className="summary-row">
-              <span>Municipios atendidos</span>
-              <strong>{new Set(equipments.map((item) => item.municipio)).size}</strong>
-            </div>
-            <div className="summary-row">
-              <span>Programas ativos</span>
-              <strong>{new Set(equipments.map((item) => item.programa)).size}</strong>
-            </div>
+          <div className="map-legend">
+            <span><i className="legend-dot stock" />Estoque</span>
+            <span><i className="legend-dot requested" />Solicitado</span>
+            <span><i className="legend-dot approved" />Aprovado</span>
+          </div>
+          <div className="map-stage">
+            <svg viewBox="0 0 100 100" className="map-svg" aria-hidden="true">
+              <path
+                d="M10 16 L26 10 L41 14 L55 12 L71 18 L86 30 L92 48 L88 66 L78 82 L58 90 L38 88 L21 76 L12 58 L8 38 Z"
+                className="map-shape"
+              />
+              <path d="M22 26 L42 24 L58 34 L52 50 L34 54 L20 44 Z" className="map-area" />
+              <path d="M54 58 L72 52 L82 64 L74 80 L56 78 Z" className="map-area is-alt" />
+            </svg>
+            {equipmentByMunicipio.map(([municipio, count]) => {
+              const position = municipalityPositions[municipio];
+              if (!position) return null;
+
+              return (
+                <div
+                  key={municipio}
+                  className="map-point"
+                  style={{ left: `${position.x}%`, top: `${position.y}%` }}
+                >
+                  <span>{count}</span>
+                  <small>{municipio}</small>
+                </div>
+              );
+            })}
           </div>
         </article>
 
-        <article className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="section-label">Atalhos</span>
-              <h3>Acoes rapidas</h3>
+        <section className="dashboard-side-grid">
+          <article className="panel">
+            <div className="panel-header">
+              <div>
+                <span className="section-label">Valor estimado</span>
+                <h3>Composicao por status</h3>
+              </div>
             </div>
+            <div className="pie-layout">
+              <div className="pie-chart" style={pieStyle} />
+              <div className="pie-legend">
+                <span><i className="legend-dot stock" />Estoque: {availableCount}</span>
+                <span><i className="legend-dot maintenance" />Em analise: {maintenanceCount}</span>
+                <span><i className="legend-dot requested" />Solicitado: {requestedCount}</span>
+                <span><i className="legend-dot approved" />Aprovado: {approvedCount}</span>
+              </div>
+            </div>
+          </article>
+
+          <article className="panel">
+            <div className="panel-header">
+              <div>
+                <span className="section-label">Equipamentos</span>
+                <h3>Por sistema produtivo</h3>
+              </div>
+            </div>
+            <div className="bar-list">
+              {equipmentBySystem.length > 0 ? (
+                equipmentBySystem.map(([system, count]) => (
+                  <div key={system} className="bar-row">
+                    <div className="bar-copy">
+                      <strong>{system}</strong>
+                      <span>{count} equipamentos</span>
+                    </div>
+                    <div className="bar-track">
+                      <span style={{ width: `${(count / maxSystemCount) * 100}%` }} />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-state">Sem dados para exibir.</div>
+              )}
+            </div>
+          </article>
+
+          <article className="panel">
+            <div className="panel-header">
+              <div>
+                <span className="section-label">Municipios</span>
+                <h3>Equipamentos por municipio</h3>
+              </div>
+            </div>
+            <div className="municipio-bars">
+              {equipmentByMunicipio.length > 0 ? (
+                equipmentByMunicipio.map(([municipio, count]) => (
+                  <div key={municipio} className="municipio-bar">
+                    <span>{municipio}</span>
+                    <div className="municipio-track">
+                      <span style={{ height: `${(count / maxMunicipioCount) * 100}%` }} />
+                    </div>
+                    <strong>{count}</strong>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-state">Sem dados para exibir.</div>
+              )}
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="section-label">Detalhamento</span>
+            <h3>Equipamentos filtrados</h3>
           </div>
-          <div className="quick-actions">
+          <div className="quick-actions dashboard-actions">
             <button type="button" className="action-button primary" onClick={() => goTo("novo")}>
               <PackagePlus size={16} />
               Novo cadastro
@@ -298,70 +518,38 @@ function DashboardPage({
               <Search size={16} />
               Consultar base
             </button>
-            <button type="button" className="action-button" onClick={() => goTo("solicitacoes")}>
-              <FileText size={16} />
-              Ver solicitacoes
-            </button>
           </div>
-        </article>
-      </section>
-
-      <section className="dashboard-grid">
-        <article className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="section-label">Equipamentos recentes</span>
-              <h3>Base cadastrada</h3>
-            </div>
-          </div>
-          <div className="list-table">
-            {equipments.slice(0, 5).map((equipment) => (
-              <div key={equipment.id} className="list-row">
-                <div>
-                  <strong>{equipment.nome}</strong>
-                  <small>{equipment.programa}</small>
-                </div>
-                <div>
-                  <span>{equipment.municipio}</span>
-                  <small>{equipment.endereco}</small>
-                </div>
-                <div>
-                  <span className={`status-pill ${statusClass(equipment.status)}`}>
-                    {equipment.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="section-label">Ultimas solicitacoes</span>
-              <h3>Fila administrativa</h3>
-            </div>
-          </div>
-          <div className="list-table">
-            {solicitations.slice(0, 5).map((item) => (
-              <div key={item.id} className="list-row">
-                <div>
-                  <strong>{item.equipamentoNome}</strong>
-                  <small>{item.nomeSolicitante}</small>
-                </div>
-                <div>
-                  <span>{dateFormatter(item.dataSolicitacao)}</span>
-                  <small>{item.localDestino}</small>
-                </div>
-                <div>
-                  <span className={`status-pill ${statusClass(item.decisaoAdmin)}`}>
-                    {item.decisaoAdmin}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
+        </div>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Programa</th>
+                <th>Valor estimado</th>
+                <th>Status</th>
+                <th>Sistema</th>
+                <th>Municipio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEquipments.map((equipment) => (
+                <tr key={equipment.id}>
+                  <td>{equipment.nome}</td>
+                  <td>{equipment.programa}</td>
+                  <td>{currencyFormatter(equipment.valorEstimado)}</td>
+                  <td>
+                    <span className={`status-pill ${statusClass(equipment.status)}`}>
+                      {equipment.status}
+                    </span>
+                  </td>
+                  <td>{equipment.sistemaProdutivo}</td>
+                  <td>{equipment.municipio}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </PageFrame>
   );
