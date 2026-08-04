@@ -628,18 +628,21 @@ function DashboardPage({
                 <h3>Equipamentos por municipio</h3>
               </div>
             </div>
-            <div className="municipio-bars">
+            <div className="municipio-bar-list">
               {equipmentByMunicipio.length > 0 ? (
                 equipmentByMunicipio.map(([municipio, count]) => (
                   <button
                     key={municipio}
                     type="button"
-                    className={`municipio-bar ${municipioFilter === municipio ? "active" : ""}`}
+                    className={`municipio-bar-row ${municipioFilter === municipio ? "active" : ""}`}
                     onClick={() => toggleMunicipioFilter(municipio)}
                   >
-                    <span>{municipio}</span>
-                    <div className="municipio-track">
-                      <span style={{ height: `${(count / maxMunicipioCount) * 100}%` }} />
+                    <div className="municipio-bar-copy">
+                      <strong>{municipio}</strong>
+                      <span>{count} equipamento{count > 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="municipio-bar-track">
+                      <span style={{ width: `${(count / maxMunicipioCount) * 100}%` }} />
                     </div>
                     <strong>{count}</strong>
                   </button>
