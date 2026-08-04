@@ -29,7 +29,6 @@ type EquipmentFormState = {
   endereco: string;
   programa: string;
   descricao: string;
-  anexos: string;
 };
 
 type SolicitationFormState = {
@@ -50,7 +49,6 @@ const initialEquipmentForm: EquipmentFormState = {
   endereco: optionCatalog.enderecosPorMunicipio[optionCatalog.municipios[0]][0],
   programa: optionCatalog.programas[0],
   descricao: "",
-  anexos: "",
 };
 
 const initialSolicitationForm: SolicitationFormState = {
@@ -90,6 +88,20 @@ function statusClass(status: string) {
   if (status === "Disponivel" || status === "Aprovado") return "status-positive";
   if (status === "Solicitado" || status === "Recusado") return "status-negative";
   return "status-warning";
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  if (digits.length <= 7) {
+    return `${digits.slice(0, 2)} ${digits.slice(2)}`;
+  }
+
+  return `${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
 function AppShell({
@@ -362,6 +374,7 @@ function App() {
   const [equipmentForm, setEquipmentForm] = useState<EquipmentFormState>(initialEquipmentForm);
   const [solicitationForm, setSolicitationForm] = useState<SolicitationFormState>(initialSolicitationForm);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [search, setSearch] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
@@ -473,10 +486,7 @@ function App() {
       endereco: equipmentForm.endereco,
       programa: equipmentForm.programa,
       descricao: equipmentForm.descricao,
-      anexos: equipmentForm.anexos
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
+      anexos: selectedFiles.map((file) => file.name),
       status: "Disponivel" as const,
     };
 
@@ -484,6 +494,7 @@ function App() {
       const response = await api.createEquipment(newEquipment);
       setEquipments((current) => [response.item, ...current]);
       setEquipmentForm(initialEquipmentForm);
+      setSelectedFiles([]);
       setStatusMessage(response.message);
       setPage("equipamentos");
     } catch (error) {
@@ -503,7 +514,7 @@ function App() {
       equipamentoId: selectedEquipment.id,
       equipamentoNome: selectedEquipment.nome,
       nomeSolicitante: solicitationForm.nomeSolicitante,
-      contatoSolicitante: solicitationForm.contatoSolicitante,
+      contatoSolicitante: formatPhone(solicitationForm.contatoSolicitante),
       localDestino: solicitationForm.localDestino,
       justificativa: solicitationForm.justificativa,
       decisaoAdmin: "Pendente" as const,
@@ -656,11 +667,24 @@ function App() {
                 <label>
                   Anexos
                   <input
-                    placeholder="Ex.: foto1.png, termo.pdf"
-                    value={equipmentForm.anexos}
-                    onChange={(event) => updateEquipmentForm("anexos", event.target.value)}
+                    type="file"
+                    multiple
+                    onChange={(event) =>
+                      setSelectedFiles(Array.from(event.target.files ?? []))
+                    }
                   />
                 </label>
+                <div className="file-list">
+                  {selectedFiles.length > 0 ? (
+                    selectedFiles.map((file) => (
+                      <span key={`${file.name}-${file.lastModified}`} className="file-chip">
+                        {file.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="file-helper">Nenhum arquivo selecionado.</span>
+                  )}
+                </div>
                 <label className="span-2">
                   Descricao
                   <textarea
@@ -842,8 +866,11 @@ function App() {
                   required
                   value={solicitationForm.contatoSolicitante}
                   onChange={(event) =>
-                    updateSolicitationForm("contatoSolicitante", event.target.value)
+                    updateSolicitationForm("contatoSolicitante", formatPhone(event.target.value))
                   }
+                  inputMode="numeric"
+                  placeholder="71 91234-5678"
+                  maxLength={13}
                 />
               </label>
               <label className="span-2">

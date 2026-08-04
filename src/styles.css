@@ -502,6 +502,32 @@ label {
   justify-content: flex-end;
 }
 
+.file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 0;
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-alt);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.file-helper {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .table-scroll {
   overflow: auto;
   border: 1px solid var(--border);
