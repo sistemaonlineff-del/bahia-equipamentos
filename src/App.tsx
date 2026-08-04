@@ -8,9 +8,10 @@ import {
   ShieldCheck,
   Warehouse,
 } from "lucide-react";
-import React, { FormEvent, useMemo, useState } from "react";
+import React, { FormEvent, useEffect, useMemo, useState } from "react";
 import logo1 from "../assets/logo_1.jpeg";
 import logo2 from "../assets/logo_2.jpeg";
+import { api } from "./api";
 import { mockEquipments, mockSolicitations, optionCatalog } from "./data/mock-data";
 import "./styles.css";
 import type { Equipment, Solicitation } from "./types/domain";
@@ -94,10 +95,14 @@ function statusClass(status: string) {
 function AppShell({
   page,
   setPage,
+  connected,
+  statusMessage,
   children,
 }: {
   page: Page;
   setPage: (page: Page) => void;
+  connected: boolean;
+  statusMessage?: string;
   children: React.ReactNode;
 }) {
   const navItems: { id: Page; icon: React.ReactNode; caption: string }[] = [
@@ -156,7 +161,7 @@ function AppShell({
           <div className="topbar-meta">
             <div>
               <span>Ambiente</span>
-              <strong>Mock operacional</strong>
+              <strong>{connected ? "Supabase conectado" : "Mock operacional"}</strong>
             </div>
             <div>
               <span>Atualizacao</span>
@@ -164,6 +169,7 @@ function AppShell({
             </div>
           </div>
         </header>
+        {statusMessage ? <div className="status-banner">{statusMessage}</div> : null}
         {children}
       </section>
     </div>
@@ -357,6 +363,47 @@ function App() {
   const [solicitationForm, setSolicitationForm] = useState<SolicitationFormState>(initialSolicitationForm);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [search, setSearch] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadData() {
+      try {
+        const [equipmentResponse, solicitationResponse] = await Promise.all([
+          api.equipments(),
+          api.solicitations(),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setEquipments(equipmentResponse.items);
+        setSolicitations(solicitationResponse.items);
+        setStatusMessage(
+          api.isConnected
+            ? "Dados carregados do Supabase."
+            : "Supabase nao configurado. Exibindo dados locais.",
+        );
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        console.error(error);
+        setStatusMessage("Nao foi possivel carregar o banco. Exibindo dados locais.");
+        setEquipments(mockEquipments);
+        setSolicitations(mockSolicitations);
+      }
+    }
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filteredEquipments = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -412,11 +459,10 @@ function App() {
     }));
   }
 
-  function handleEquipmentSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleEquipmentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const newEquipment: Equipment = {
-      id: equipments.length + 1,
+    const newEquipment = {
       nome: equipmentForm.nome,
       sistemaProdutivo: equipmentForm.sistemaProdutivo,
       convenioTermo: equipmentForm.convenioTermo,
@@ -431,49 +477,67 @@ function App() {
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean),
-      status: "Disponivel",
+      status: "Disponivel" as const,
     };
 
-    setEquipments((current) => [newEquipment, ...current]);
-    setEquipmentForm(initialEquipmentForm);
-    setPage("equipamentos");
+    try {
+      const response = await api.createEquipment(newEquipment);
+      setEquipments((current) => [response.item, ...current]);
+      setEquipmentForm(initialEquipmentForm);
+      setStatusMessage(response.message);
+      setPage("equipamentos");
+    } catch (error) {
+      console.error(error);
+      setStatusMessage("Nao foi possivel salvar o equipamento no banco.");
+    }
   }
 
-  function handleSolicitationSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSolicitationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedEquipment) {
       return;
     }
 
-    const newSolicitation: Solicitation = {
-      id: solicitations.length + 1,
+    const newSolicitation = {
       equipamentoId: selectedEquipment.id,
       equipamentoNome: selectedEquipment.nome,
       nomeSolicitante: solicitationForm.nomeSolicitante,
       contatoSolicitante: solicitationForm.contatoSolicitante,
       localDestino: solicitationForm.localDestino,
       justificativa: solicitationForm.justificativa,
-      decisaoAdmin: "Pendente",
+      decisaoAdmin: "Pendente" as const,
       observacoes: "Aguardando avaliacao administrativa.",
       dataSolicitacao: "2026-08-04",
     };
 
-    setSolicitations((current) => [newSolicitation, ...current]);
-    setEquipments((current) =>
-      current.map((equipment) =>
-        equipment.id === selectedEquipment.id
-          ? { ...equipment, status: "Solicitado" }
-          : equipment,
-      ),
-    );
-    setSolicitationForm(initialSolicitationForm);
-    setSelectedEquipment(null);
-    setPage("solicitacoes");
+    try {
+      const response = await api.createSolicitation(newSolicitation);
+      setSolicitations((current) => [response.item, ...current]);
+      setEquipments((current) =>
+        current.map((equipment) =>
+          equipment.id === selectedEquipment.id
+            ? { ...equipment, status: "Solicitado" }
+            : equipment,
+        ),
+      );
+      setSolicitationForm(initialSolicitationForm);
+      setSelectedEquipment(null);
+      setStatusMessage(response.message);
+      setPage("solicitacoes");
+    } catch (error) {
+      console.error(error);
+      setStatusMessage("Nao foi possivel registrar a solicitacao no banco.");
+    }
   }
 
   return (
-    <AppShell page={page} setPage={setPage}>
+    <AppShell
+      page={page}
+      setPage={setPage}
+      connected={api.isConnected}
+      statusMessage={statusMessage}
+    >
       {page === "dashboard" && (
         <DashboardPage
           equipments={equipments}

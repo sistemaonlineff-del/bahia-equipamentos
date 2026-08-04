@@ -306,6 +306,17 @@ label {
   margin-top: 18px;
 }
 
+.status-banner {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid #cfe2f3;
+  border-radius: var(--radius-sm);
+  background: #eef6fd;
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;

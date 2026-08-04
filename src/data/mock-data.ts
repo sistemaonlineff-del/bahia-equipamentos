@@ -20,7 +20,7 @@ export const optionCatalog: OptionCatalog = {
 
 export const mockEquipments: Equipment[] = [
   {
-    id: 1,
+    id: "1",
     nome: "Trator agricola 75cv",
     sistemaProdutivo: "Agricultura familiar",
     convenioTermo: "CONV-2026-001",
@@ -35,7 +35,7 @@ export const mockEquipments: Equipment[] = [
     status: "Disponivel",
   },
   {
-    id: 2,
+    id: "2",
     nome: "Camara fria modular",
     sistemaProdutivo: "Agroindustria",
     convenioTermo: "CONV-2026-008",
@@ -50,7 +50,7 @@ export const mockEquipments: Equipment[] = [
     status: "Solicitado",
   },
   {
-    id: 3,
+    id: "3",
     nome: "Kit de irrigacao por gotejamento",
     sistemaProdutivo: "Agricultura familiar",
     convenioTermo: "CONV-2025-041",
@@ -68,8 +68,8 @@ export const mockEquipments: Equipment[] = [
 
 export const mockSolicitations: Solicitation[] = [
   {
-    id: 1,
-    equipamentoId: 2,
+    id: "1",
+    equipamentoId: "2",
     equipamentoNome: "Camara fria modular",
     nomeSolicitante: "Marina Souza",
     contatoSolicitante: "(71) 99999-4444",
@@ -81,8 +81,8 @@ export const mockSolicitations: Solicitation[] = [
     dataSolicitacao: "2026-07-22",
   },
   {
-    id: 2,
-    equipamentoId: 3,
+    id: "2",
+    equipamentoId: "3",
     equipamentoNome: "Kit de irrigacao por gotejamento",
     nomeSolicitante: "Carlos Menezes",
     contatoSolicitante: "(74) 98888-2211",

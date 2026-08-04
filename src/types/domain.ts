@@ -1,7 +1,7 @@
 export type DecisionStatus = "Aprovado" | "Recusado" | "Pendente";
 
 export type Equipment = {
-  id: number;
+  id: string;
   nome: string;
   sistemaProdutivo: string;
   convenioTermo: string;
@@ -17,8 +17,8 @@ export type Equipment = {
 };
 
 export type Solicitation = {
-  id: number;
-  equipamentoId: number;
+  id: string;
+  equipamentoId: string;
   equipamentoNome: string;
   nomeSolicitante: string;
   contatoSolicitante: string;
