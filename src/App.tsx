@@ -196,6 +196,9 @@ function DashboardPage({
   const availableCount = equipments.filter((item) => item.status === "Disponivel").length;
   const pendingCount = solicitations.filter((item) => item.decisaoAdmin === "Pendente").length;
   const totalEstimatedValue = equipments.reduce((total, item) => total + Number(item.valorEstimado || 0), 0);
+  const coverageLabel = equipments.length
+    ? `${availableCount} de ${equipments.length} itens prontos para uso`
+    : "Sem equipamentos cadastrados";
 
   return (
     <PageBlock page="dashboard">
@@ -205,10 +208,10 @@ function DashboardPage({
             <Sparkles size={14} />
             Experiencia mais refinada
           </span>
-          <h3>Menos excesso visual. Mais presenca, clareza e ritmo.</h3>
+          <h3>Uma vitrine institucional, clara e mais sofisticada para a operacao.</h3>
           <p>
-            O fluxo ficou mais limpo, com leitura imediata e uma linguagem mais elegante
-            para o cliente perceber valor logo na primeira tela.
+            O sistema agora assume uma presenca mais executiva: visual limpo, ritmo melhor
+            de leitura e uma interface que transmite mais valor logo no primeiro contato.
           </p>
           <div className="hero-actions">
             <button type="button" className="hero-primary" onClick={() => goTo("novo")}>
@@ -222,6 +225,7 @@ function DashboardPage({
         </div>
 
         <div className="hero-spotlight-panel hero-panel-minimal">
+          <div className="hero-panel-kicker">Panorama atual</div>
           <div className="hero-panel-top">
             <strong>Disponibilidade</strong>
             <span>{percentage(availableCount, equipments.length)}%</span>
@@ -229,54 +233,62 @@ function DashboardPage({
           <div className="progress-rail">
             <span style={{ width: `${percentage(availableCount, equipments.length)}%` }} />
           </div>
+          <p className="hero-panel-caption">{coverageLabel}</p>
         </div>
       </section>
 
       <section className="cards-grid cards-grid-clean">
-        <div className="metric">
+        <div className="metric metric-featured">
           <span>Equipamentos</span>
           <strong>{equipments.length}</strong>
+          <small>base registrada</small>
         </div>
         <div className="metric">
           <span>Disponiveis</span>
           <strong>{availableCount}</strong>
+          <small>para novas demandas</small>
         </div>
         <div className="metric">
           <span>Solicitacoes</span>
           <strong>{pendingCount}</strong>
+          <small>aguardando retorno</small>
         </div>
         <div className="metric">
           <span>Valor total</span>
           <strong>{currencyFormatter(totalEstimatedValue)}</strong>
+          <small>estimativa atual</small>
         </div>
       </section>
 
       <section className="dashboard-grid-two dashboard-grid-clean">
         <div className="panel panel-flow">
           <div className="panel-heading">
-            <h3>Fluxos</h3>
-            <p>Atalhos mais diretos para o que realmente importa.</p>
+            <h3>Fluxos principais</h3>
+            <p>Acessos diretos com mais elegancia visual e menos ruído.</p>
           </div>
           <div className="journey-grid journey-grid-clean">
             <button type="button" className="journey-card" onClick={() => goTo("novo")}>
               <PackagePlus size={22} />
               <strong>Novo equipamento</strong>
+              <span>Cadastro inicial</span>
             </button>
             <button type="button" className="journey-card" onClick={() => goTo("equipamentos")}>
               <Search size={22} />
               <strong>Consultar</strong>
+              <span>Galeria e busca</span>
             </button>
             <button type="button" className="journey-card" onClick={() => goTo("solicitacoes")}>
               <ClipboardList size={22} />
               <strong>Solicitacoes</strong>
+              <span>Fila administrativa</span>
             </button>
           </div>
         </div>
 
         <div className="panel panel-highlight-simple">
           <div className="panel-heading">
-            <h3>Leitura rapida</h3>
-            <p>Uma composicao mais limpa, com menos blocos e mais impacto.</p>
+            <h3>Leitura executiva</h3>
+            <p>Resumo visual mais discreto, profissional e institucional.</p>
           </div>
           <div className="summary-band">
             <div className="summary-item">
