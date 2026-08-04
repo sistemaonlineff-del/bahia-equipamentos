@@ -2,7 +2,6 @@ import {
   Boxes,
   ClipboardList,
   FileText,
-  MapPinned,
   PackagePlus,
   Search,
   Send,
@@ -485,31 +484,7 @@ function App() {
 
       {page === "novo" && (
         <PageFrame page="novo">
-          <section className="form-layout">
-            <article className="panel">
-              <div className="panel-header">
-                <div>
-                  <span className="section-label">Orientacao</span>
-                  <h3>Cadastro operacional</h3>
-                </div>
-              </div>
-              <div className="info-stack">
-                <div className="info-item">
-                  <FileText size={16} />
-                  <span>Preencha dados contratuais, localizacao e programa vinculado.</span>
-                </div>
-                <div className="info-item">
-                  <MapPinned size={16} />
-                  <span>O endereco continua dependente do municipio selecionado.</span>
-                </div>
-                <div className="info-item">
-                  <ShieldCheck size={16} />
-                  <span>Novos registros entram como disponiveis por padrao.</span>
-                </div>
-              </div>
-            </article>
-
-            <section className="panel">
+          <section className="panel">
               <div className="panel-header">
                 <div>
                   <span className="section-label">Formulario</span>
@@ -636,7 +611,6 @@ function App() {
                   </button>
                 </div>
               </form>
-            </section>
           </section>
         </PageFrame>
       )}
