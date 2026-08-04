@@ -1,7 +1,10 @@
 import {
   ArrowRight,
   Building2,
+  ChevronRight,
   ClipboardList,
+  Compass,
+  LayoutGrid,
   PackagePlus,
   Search,
   Send,
@@ -60,27 +63,28 @@ const initialSolicitationForm: SolicitationFormState = {
 };
 
 const pageLabels: Record<Page, string> = {
-  dashboard: "Dashboard",
+  dashboard: "Overview",
   novo: "Novo Equipamento",
-  equipamentos: "Consultar Equipamentos",
+  equipamentos: "Galeria",
   solicitacoes: "Solicitacoes",
 };
 
 const pageDescriptions: Record<Page, string> = {
   dashboard:
-    "Uma visao mais elegante da operacao, com foco em disponibilidade, cadastro e solicitacoes.",
+    "Uma leitura mais autoral da operacao, com uma composicao mais premium e menos cara de sistema padrao.",
   novo:
-    "Cadastre novos equipamentos com uma interface mais limpa e pronta para evoluir com dados reais.",
+    "Um cadastro mais editorial, com melhor respiracao visual e uma forma mais profissional de apresentar os campos.",
   equipamentos:
-    "Explore a galeria de equipamentos de forma mais visual, direta e agradavel.",
+    "Uma galeria mais elegante para explorar a base, com foco em leitura, ritmo e destaque de cada item.",
   solicitacoes:
-    "Acompanhe as solicitacoes em uma tela mais leve, bonita e facil de ler.",
+    "Uma tela mais limpa para decisao administrativa, com estrutura visual melhor para acompanhar os pedidos.",
 };
 
 function currencyFormatter(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
+    maximumFractionDigits: 0,
   }).format(value);
 }
 
@@ -88,11 +92,6 @@ function statusClass(status: string) {
   if (status === "Disponivel" || status === "Aprovado") return "status-positive";
   if (status === "Solicitado" || status === "Recusado") return "status-negative";
   return "status-warning";
-}
-
-function percentage(part: number, total: number) {
-  if (!total) return 0;
-  return Math.round((part / total) * 100);
 }
 
 function AppShell({
@@ -104,55 +103,65 @@ function AppShell({
   setPage: (page: Page) => void;
   children: React.ReactNode;
 }) {
-  const navItems: { id: Page; icon: React.ReactNode }[] = [
-    { id: "dashboard", icon: <Building2 size={18} /> },
-    { id: "novo", icon: <PackagePlus size={18} /> },
-    { id: "equipamentos", icon: <Search size={18} /> },
-    { id: "solicitacoes", icon: <ClipboardList size={18} /> },
+  const navItems: { id: Page; icon: React.ReactNode; caption: string }[] = [
+    { id: "dashboard", icon: <Compass size={18} />, caption: "Panorama geral" },
+    { id: "novo", icon: <PackagePlus size={18} />, caption: "Cadastro" },
+    { id: "equipamentos", icon: <LayoutGrid size={18} />, caption: "Consulta visual" },
+    { id: "solicitacoes", icon: <ClipboardList size={18} />, caption: "Fila administrativa" },
   ];
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <img src={logo1} alt="Logo CAR" />
-          <img src={logo2} alt="Logo Governo da Bahia" />
-          <strong>Bahia Equipamentos</strong>
-          <span>Gestao operacional de equipamentos e solicitacoes</span>
-        </div>
-
-        <div className="user-chip">
-          <div className="avatar">B</div>
-          <div>
-            <strong>Equipe Bahia</strong>
-            <span>Ambiente inicial de operacao</span>
+    <div className="shell">
+      <aside className="rail">
+        <div className="rail-brand">
+          <div className="rail-logos">
+            <img src={logo1} alt="Logo CAR" />
+            <img src={logo2} alt="Logo Governo da Bahia" />
+          </div>
+          <div className="rail-brand-copy">
+            <strong>Bahia Equipamentos</strong>
+            <span>Plataforma operacional</span>
           </div>
         </div>
 
-        <nav>
+        <div className="rail-user">
+          <div className="rail-avatar">B</div>
+          <div>
+            <strong>Equipe Bahia</strong>
+            <span>Ambiente inicial</span>
+          </div>
+        </div>
+
+        <nav className="rail-nav">
           {navItems.map((item) => (
             <button
               key={item.id}
               type="button"
-              className={page === item.id ? "active" : ""}
+              className={page === item.id ? "rail-link active" : "rail-link"}
               onClick={() => setPage(item.id)}
             >
-              {item.icon}
-              {pageLabels[item.id]}
+              <span className="rail-link-icon">{item.icon}</span>
+              <span className="rail-link-copy">
+                <strong>{pageLabels[item.id]}</strong>
+                <small>{item.caption}</small>
+              </span>
             </button>
           ))}
         </nav>
 
-        <div className="sidebar-note">
-          <ShieldCheck size={18} />
-          Base pronta para integrar com Supabase, GitHub e Vercel.
+        <div className="rail-note">
+          <ShieldCheck size={16} />
+          Estrutura pronta para Supabase, GitHub e Vercel.
         </div>
       </aside>
 
-      <section className="content">
-        <header className="topbar">
-          <h1>Gestao de Equipamentos - Bahia</h1>
-          <p>Um visual mais refinado, leve e dinamico para a operacao.</p>
+      <section className="stage">
+        <header className="masthead">
+          <div>
+            <span className="eyebrow">Sistema Bahia</span>
+            <h1>Gestao de Equipamentos</h1>
+            <p>Uma interface mais marcante, profissional e com linguagem visual de produto.</p>
+          </div>
         </header>
         {children}
       </section>
@@ -160,7 +169,7 @@ function AppShell({
   );
 }
 
-function PageBlock({
+function PageFrame({
   page,
   actions,
   children,
@@ -170,15 +179,15 @@ function PageBlock({
   children: React.ReactNode;
 }) {
   return (
-    <main className="page-shell">
-      <div className="page-header">
+    <main className="page-frame">
+      <section className="page-banner">
         <div>
-          <span className="page-eyebrow">Sistema Bahia</span>
-          <h2 className="page-title">{pageLabels[page]}</h2>
-          <p className="page-subtitle">{pageDescriptions[page]}</p>
+          <span className="page-kicker">Bahia</span>
+          <h2>{pageLabels[page]}</h2>
+          <p>{pageDescriptions[page]}</p>
         </div>
         {actions}
-      </div>
+      </section>
       {children}
     </main>
   );
@@ -194,128 +203,133 @@ function DashboardPage({
   goTo: (page: Page) => void;
 }) {
   const availableCount = equipments.filter((item) => item.status === "Disponivel").length;
+  const totalEstimatedValue = equipments.reduce(
+    (total, item) => total + Number(item.valorEstimado || 0),
+    0,
+  );
   const pendingCount = solicitations.filter((item) => item.decisaoAdmin === "Pendente").length;
-  const totalEstimatedValue = equipments.reduce((total, item) => total + Number(item.valorEstimado || 0), 0);
-  const coverageLabel = equipments.length
-    ? `${availableCount} de ${equipments.length} itens prontos para uso`
-    : "Sem equipamentos cadastrados";
+  const leadEquipment = equipments[0];
 
   return (
-    <PageBlock page="dashboard">
-      <section className="hero-spotlight hero-spotlight-clean">
-        <div className="hero-spotlight-copy">
-          <span className="hero-chip">
-            <Sparkles size={14} />
-            Experiencia mais refinada
-          </span>
-          <h3>Uma vitrine institucional, clara e mais sofisticada para a operacao.</h3>
-          <p>
-            O sistema agora assume uma presenca mais executiva: visual limpo, ritmo melhor
-            de leitura e uma interface que transmite mais valor logo no primeiro contato.
-          </p>
-          <div className="hero-actions">
-            <button type="button" className="hero-primary" onClick={() => goTo("novo")}>
-              Novo equipamento
-              <ArrowRight size={16} />
-            </button>
-            <button type="button" className="hero-secondary" onClick={() => goTo("equipamentos")}>
-              Ver galeria
-            </button>
+    <PageFrame page="dashboard">
+      <section className="overview-grid">
+        <article className="hero-card">
+          <div className="hero-card-copy">
+            <span className="hero-chip">
+              <Sparkles size={14} />
+              Nova assinatura visual
+            </span>
+            <h3>Uma operacao com mais presenca, mais design e menos cara de painel comum.</h3>
+            <p>
+              O foco aqui e transformar a percepcao do produto: uma interface mais premium,
+              mais organizada e com um layout mais memoravel.
+            </p>
+            <div className="hero-actions">
+              <button type="button" className="cta-primary" onClick={() => goTo("novo")}>
+                Cadastrar novo
+                <ArrowRight size={16} />
+              </button>
+              <button type="button" className="cta-ghost" onClick={() => goTo("equipamentos")}>
+                Explorar galeria
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="hero-spotlight-panel hero-panel-minimal">
-          <div className="hero-panel-kicker">Panorama atual</div>
-          <div className="hero-panel-top">
-            <strong>Disponibilidade</strong>
-            <span>{percentage(availableCount, equipments.length)}%</span>
+          <div className="hero-card-side">
+            <div className="hero-value">
+              <span>Disponibilidade</span>
+              <strong>{Math.round((availableCount / Math.max(equipments.length, 1)) * 100)}%</strong>
+            </div>
+            <div className="hero-meter">
+              <span
+                style={{
+                  width: `${Math.round((availableCount / Math.max(equipments.length, 1)) * 100)}%`,
+                }}
+              />
+            </div>
+            <p>{availableCount} itens liberados para novas solicitacoes agora.</p>
           </div>
-          <div className="progress-rail">
-            <span style={{ width: `${percentage(availableCount, equipments.length)}%` }} />
-          </div>
-          <p className="hero-panel-caption">{coverageLabel}</p>
-        </div>
+        </article>
+
+        <article className="spotlight-card">
+          <span className="card-tag">Destaque</span>
+          <h3>{leadEquipment?.nome ?? "Base em preparacao"}</h3>
+          <p>{leadEquipment?.descricao ?? "Assim que houver registros, eles aparecem aqui."}</p>
+          <dl>
+            <div>
+              <dt>Municipio</dt>
+              <dd>{leadEquipment?.municipio ?? "-"}</dd>
+            </div>
+            <div>
+              <dt>Programa</dt>
+              <dd>{leadEquipment?.programa ?? "-"}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{leadEquipment?.status ?? "-"}</dd>
+            </div>
+          </dl>
+        </article>
       </section>
 
-      <section className="cards-grid cards-grid-clean">
-        <div className="metric metric-featured">
-          <span>Equipamentos</span>
+      <section className="stats-ribbon">
+        <article className="stat-tile stat-tile-wide">
+          <span>Base total</span>
           <strong>{equipments.length}</strong>
-          <small>base registrada</small>
-        </div>
-        <div className="metric">
+          <small>equipamentos cadastrados</small>
+        </article>
+        <article className="stat-tile">
           <span>Disponiveis</span>
           <strong>{availableCount}</strong>
-          <small>para novas demandas</small>
-        </div>
-        <div className="metric">
-          <span>Solicitacoes</span>
+          <small>prontos para uso</small>
+        </article>
+        <article className="stat-tile">
+          <span>Pendentes</span>
           <strong>{pendingCount}</strong>
-          <small>aguardando retorno</small>
-        </div>
-        <div className="metric">
-          <span>Valor total</span>
+          <small>em avaliacao</small>
+        </article>
+        <article className="stat-tile stat-tile-accent">
+          <span>Valor estimado</span>
           <strong>{currencyFormatter(totalEstimatedValue)}</strong>
-          <small>estimativa atual</small>
-        </div>
+          <small>capacidade consolidada</small>
+        </article>
       </section>
 
-      <section className="dashboard-grid-two dashboard-grid-clean">
-        <div className="panel panel-flow">
-          <div className="panel-heading">
-            <h3>Fluxos principais</h3>
-            <p>Acessos diretos com mais elegancia visual e menos ruído.</p>
+      <section className="action-board">
+        <button type="button" className="action-card action-card-primary" onClick={() => goTo("novo")}>
+          <PackagePlus size={20} />
+          <div>
+            <strong>Novo equipamento</strong>
+            <span>Cadastro com leitura mais limpa</span>
           </div>
-          <div className="journey-grid journey-grid-clean">
-            <button type="button" className="journey-card" onClick={() => goTo("novo")}>
-              <PackagePlus size={22} />
-              <strong>Novo equipamento</strong>
-              <span>Cadastro inicial</span>
-            </button>
-            <button type="button" className="journey-card" onClick={() => goTo("equipamentos")}>
-              <Search size={22} />
-              <strong>Consultar</strong>
-              <span>Galeria e busca</span>
-            </button>
-            <button type="button" className="journey-card" onClick={() => goTo("solicitacoes")}>
-              <ClipboardList size={22} />
-              <strong>Solicitacoes</strong>
-              <span>Fila administrativa</span>
-            </button>
+          <ChevronRight size={18} />
+        </button>
+        <button
+          type="button"
+          className="action-card"
+          onClick={() => goTo("equipamentos")}
+        >
+          <Search size={20} />
+          <div>
+            <strong>Consultar base</strong>
+            <span>Galeria com mais ritmo visual</span>
           </div>
-        </div>
-
-        <div className="panel panel-highlight-simple">
-          <div className="panel-heading">
-            <h3>Leitura executiva</h3>
-            <p>Resumo visual mais discreto, profissional e institucional.</p>
+          <ChevronRight size={18} />
+        </button>
+        <button
+          type="button"
+          className="action-card"
+          onClick={() => goTo("solicitacoes")}
+        >
+          <ClipboardList size={20} />
+          <div>
+            <strong>Solicitacoes</strong>
+            <span>Painel administrativo organizado</span>
           </div>
-          <div className="summary-band">
-            <div className="summary-item">
-              <div className="summary-dot" />
-              <div>
-                <strong>{availableCount} disponiveis</strong>
-                <span>prontos para uso</span>
-              </div>
-            </div>
-            <div className="summary-item">
-              <div className="summary-dot" />
-              <div>
-                <strong>{pendingCount} pendentes</strong>
-                <span>aguardando decisao</span>
-              </div>
-            </div>
-            <div className="summary-item">
-              <div className="summary-dot" />
-              <div>
-                <strong>{currencyFormatter(totalEstimatedValue)}</strong>
-                <span>valor estimado</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          <ChevronRight size={18} />
+        </button>
       </section>
-    </PageBlock>
+    </PageFrame>
   );
 }
 
@@ -425,7 +439,7 @@ function App() {
       justificativa: solicitationForm.justificativa,
       decisaoAdmin: "Pendente",
       observacoes: "Aguardando avaliacao administrativa.",
-      dataSolicitacao: "2026-08-01",
+      dataSolicitacao: "2026-08-04",
     };
 
     setSolicitations((current) => [newSolicitation, ...current]);
@@ -452,138 +466,148 @@ function App() {
       )}
 
       {page === "novo" && (
-        <PageBlock page="novo">
-          <section className="panel">
-            <div className="panel-heading">
-              <h3>Cadastro principal</h3>
-              <p>Formulario base da tela do PowerApps, com acabamento mais limpo e bonito.</p>
-            </div>
-            <form className="form-grid" onSubmit={handleEquipmentSubmit}>
-              <label>
-                Nome
-                <input
-                  required
-                  value={equipmentForm.nome}
-                  onChange={(event) => updateEquipmentForm("nome", event.target.value)}
-                />
-              </label>
-              <label>
-                Sistema produtivo
-                <select
-                  value={equipmentForm.sistemaProdutivo}
-                  onChange={(event) =>
-                    updateEquipmentForm("sistemaProdutivo", event.target.value)
-                  }
-                >
-                  {optionCatalog.sistemasProdutivos.map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Convenio termo
-                <input
-                  required
-                  value={equipmentForm.convenioTermo}
-                  onChange={(event) =>
-                    updateEquipmentForm("convenioTermo", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                Condicao
-                <select
-                  value={equipmentForm.condicao}
-                  onChange={(event) => updateEquipmentForm("condicao", event.target.value)}
-                >
-                  {optionCatalog.condicoes.map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Proprietario
-                <input
-                  required
-                  value={equipmentForm.proprietario}
-                  onChange={(event) =>
-                    updateEquipmentForm("proprietario", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                Valor estimado
-                <input
-                  required
-                  inputMode="decimal"
-                  value={equipmentForm.valorEstimado}
-                  onChange={(event) =>
-                    updateEquipmentForm("valorEstimado", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                Municipio
-                <select
-                  value={equipmentForm.municipio}
-                  onChange={(event) => updateEquipmentForm("municipio", event.target.value)}
-                >
-                  {optionCatalog.municipios.map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Endereco
-                <select
-                  value={equipmentForm.endereco}
-                  onChange={(event) => updateEquipmentForm("endereco", event.target.value)}
-                >
-                  {availableAddresses.map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Programa
-                <select
-                  value={equipmentForm.programa}
-                  onChange={(event) => updateEquipmentForm("programa", event.target.value)}
-                >
-                  {optionCatalog.programas.map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="span-2">
-                Descricao
-                <textarea
-                  rows={4}
-                  value={equipmentForm.descricao}
-                  onChange={(event) => updateEquipmentForm("descricao", event.target.value)}
-                />
-              </label>
-              <label className="span-2">
-                Anexos
-                <input
-                  placeholder="Ex.: foto1.png, termo.pdf"
-                  value={equipmentForm.anexos}
-                  onChange={(event) => updateEquipmentForm("anexos", event.target.value)}
-                />
-              </label>
-              <div className="form-actions span-2">
-                <button type="submit">Salvar equipamento</button>
-              </div>
-            </form>
+        <PageFrame page="novo">
+          <section className="editor-layout">
+            <article className="editor-intro">
+              <span className="card-tag">Cadastro</span>
+              <h3>Uma tela mais editorial para um formulario que parecia burocratico.</h3>
+              <p>
+                Aqui o foco mudou para composicao, espacamento e hierarquia. O fluxo continua
+                o mesmo, mas a experiencia fica muito mais profissional.
+              </p>
+            </article>
+
+            <section className="form-panel">
+              <form className="form-grid" onSubmit={handleEquipmentSubmit}>
+                <label>
+                  Nome
+                  <input
+                    required
+                    value={equipmentForm.nome}
+                    onChange={(event) => updateEquipmentForm("nome", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Sistema produtivo
+                  <select
+                    value={equipmentForm.sistemaProdutivo}
+                    onChange={(event) =>
+                      updateEquipmentForm("sistemaProdutivo", event.target.value)
+                    }
+                  >
+                    {optionCatalog.sistemasProdutivos.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Convenio termo
+                  <input
+                    required
+                    value={equipmentForm.convenioTermo}
+                    onChange={(event) =>
+                      updateEquipmentForm("convenioTermo", event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  Condicao
+                  <select
+                    value={equipmentForm.condicao}
+                    onChange={(event) => updateEquipmentForm("condicao", event.target.value)}
+                  >
+                    {optionCatalog.condicoes.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Proprietario
+                  <input
+                    required
+                    value={equipmentForm.proprietario}
+                    onChange={(event) =>
+                      updateEquipmentForm("proprietario", event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  Valor estimado
+                  <input
+                    required
+                    inputMode="decimal"
+                    value={equipmentForm.valorEstimado}
+                    onChange={(event) =>
+                      updateEquipmentForm("valorEstimado", event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  Municipio
+                  <select
+                    value={equipmentForm.municipio}
+                    onChange={(event) => updateEquipmentForm("municipio", event.target.value)}
+                  >
+                    {optionCatalog.municipios.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Endereco
+                  <select
+                    value={equipmentForm.endereco}
+                    onChange={(event) => updateEquipmentForm("endereco", event.target.value)}
+                  >
+                    {availableAddresses.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Programa
+                  <select
+                    value={equipmentForm.programa}
+                    onChange={(event) => updateEquipmentForm("programa", event.target.value)}
+                  >
+                    {optionCatalog.programas.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="span-2">
+                  Descricao
+                  <textarea
+                    rows={4}
+                    value={equipmentForm.descricao}
+                    onChange={(event) => updateEquipmentForm("descricao", event.target.value)}
+                  />
+                </label>
+                <label className="span-2">
+                  Anexos
+                  <input
+                    placeholder="Ex.: foto1.png, termo.pdf"
+                    value={equipmentForm.anexos}
+                    onChange={(event) => updateEquipmentForm("anexos", event.target.value)}
+                  />
+                </label>
+                <div className="form-actions span-2">
+                  <button type="submit" className="cta-primary">
+                    Salvar equipamento
+                  </button>
+                </div>
+              </form>
+            </section>
           </section>
-        </PageBlock>
+        </PageFrame>
       )}
 
       {page === "equipamentos" && (
-        <PageBlock
+        <PageFrame
           page="equipamentos"
           actions={
-            <div className="page-actions">
+            <div className="page-search">
+              <Search size={16} />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -592,86 +616,83 @@ function App() {
             </div>
           }
         >
-          <section className="equipment-grid">
-            {filteredEquipments.map((equipment) => (
-              <article key={equipment.id} className="equipment-card">
-                <div className="equipment-card-top">
+          <section className="gallery-grid">
+            {filteredEquipments.map((equipment, index) => (
+              <article
+                key={equipment.id}
+                className={index === 0 ? "gallery-card gallery-card-large" : "gallery-card"}
+              >
+                <div className="gallery-head">
                   <span className={`status-pill ${statusClass(equipment.status)}`}>
                     {equipment.status}
                   </span>
-                  <span className="equipment-tag">{equipment.programa}</span>
+                  <span className="gallery-program">{equipment.programa}</span>
                 </div>
                 <h3>{equipment.nome}</h3>
                 <p>{equipment.descricao}</p>
-                <div className="equipment-meta-grid">
-                  <div>
-                    <span>Municipio</span>
-                    <strong>{equipment.municipio}</strong>
-                  </div>
-                  <div>
-                    <span>Endereco</span>
-                    <strong>{equipment.endereco}</strong>
-                  </div>
-                  <div>
-                    <span>Proprietario</span>
-                    <strong>{equipment.proprietario}</strong>
-                  </div>
-                  <div>
-                    <span>Valor</span>
-                    <strong>{currencyFormatter(equipment.valorEstimado)}</strong>
-                  </div>
+                <div className="gallery-facts">
+                  <span>{equipment.municipio}</span>
+                  <span>{equipment.endereco}</span>
+                  <span>{currencyFormatter(equipment.valorEstimado)}</span>
                 </div>
-                <button type="button" onClick={() => setSelectedEquipment(equipment)}>
-                  <Send size={16} />
+                <button type="button" className="gallery-action" onClick={() => setSelectedEquipment(equipment)}>
+                  <Send size={15} />
                   Solicitar
                 </button>
               </article>
             ))}
           </section>
-        </PageBlock>
+        </PageFrame>
       )}
 
       {page === "solicitacoes" && (
-        <PageBlock page="solicitacoes">
-          <section className="panel">
-            <div className="panel-heading">
-              <h3>Galeria administrativa</h3>
-              <p>Leitura mais limpa do retorno do admin e das observacoes do fluxo.</p>
-            </div>
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Equipamento</th>
-                    <th>Solicitante</th>
-                    <th>Contato</th>
-                    <th>Destino</th>
-                    <th>Decisao</th>
-                    <th>Admin</th>
-                    <th>Observacoes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {solicitations.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.equipamentoNome}</td>
-                      <td>{item.nomeSolicitante}</td>
-                      <td>{item.contatoSolicitante}</td>
-                      <td>{item.localDestino}</td>
-                      <td>
-                        <span className={`status-pill ${statusClass(item.decisaoAdmin)}`}>
-                          {item.decisaoAdmin}
-                        </span>
-                      </td>
-                      <td>{item.nomeAdmin ?? "A definir"}</td>
-                      <td>{item.observacoes ?? "-"}</td>
+        <PageFrame page="solicitacoes">
+          <section className="request-layout">
+            <article className="request-summary">
+              <span className="card-tag">Acompanhamento</span>
+              <h3>{solicitations.length} solicitacoes acompanhadas em uma leitura mais limpa.</h3>
+              <p>
+                O retorno administrativo agora aparece em uma estrutura mais elegante e mais
+                facil de escanear visualmente.
+              </p>
+            </article>
+
+            <section className="table-panel">
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Equipamento</th>
+                      <th>Solicitante</th>
+                      <th>Contato</th>
+                      <th>Destino</th>
+                      <th>Decisao</th>
+                      <th>Admin</th>
+                      <th>Observacoes</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {solicitations.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.equipamentoNome}</td>
+                        <td>{item.nomeSolicitante}</td>
+                        <td>{item.contatoSolicitante}</td>
+                        <td>{item.localDestino}</td>
+                        <td>
+                          <span className={`status-pill ${statusClass(item.decisaoAdmin)}`}>
+                            {item.decisaoAdmin}
+                          </span>
+                        </td>
+                        <td>{item.nomeAdmin ?? "A definir"}</td>
+                        <td>{item.observacoes ?? "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </section>
-        </PageBlock>
+        </PageFrame>
       )}
 
       {selectedEquipment && (
@@ -679,13 +700,13 @@ function App() {
           <div className="modal-card">
             <div className="modal-header">
               <div>
-                <span className="page-eyebrow">Solicitacao</span>
+                <span className="page-kicker">Solicitacao</span>
                 <h3>{selectedEquipment.nome}</h3>
                 <p>Preencha os dados para registrar a solicitacao do equipamento.</p>
               </div>
               <button
                 type="button"
-                className="secondary-button"
+                className="cta-ghost"
                 onClick={() => setSelectedEquipment(null)}
               >
                 Fechar
@@ -735,7 +756,9 @@ function App() {
                 />
               </label>
               <div className="form-actions span-2">
-                <button type="submit">Enviar solicitacao</button>
+                <button type="submit" className="cta-primary">
+                  Enviar solicitacao
+                </button>
               </div>
             </form>
           </div>
