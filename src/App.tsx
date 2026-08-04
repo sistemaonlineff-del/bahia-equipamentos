@@ -114,6 +114,13 @@ const municipalityCoordinates: Record<string, { lat: number; lng: number }> = {
   Juazeiro: { lat: -9.4116, lng: -40.4980 },
 };
 
+const statusPalette = {
+  estoque: "#2e9f3d",
+  analise: "#f59e0b",
+  solicitado: "#dc2626",
+  aprovado: "#0b6fc2",
+} as const;
+
 function buildPieStyle(values: number[]) {
   const total = values.reduce((sum, value) => sum + value, 0);
 
@@ -124,7 +131,12 @@ function buildPieStyle(values: number[]) {
     };
   }
 
-  const colors = ["#1f7a1f", "#005a9c", "#d92d20", "#f59e0b"];
+  const colors = [
+    statusPalette.estoque,
+    statusPalette.analise,
+    statusPalette.solicitado,
+    statusPalette.aprovado,
+  ];
   let offset = 0;
   const slices = values.map((value, index) => {
     const angle = (value / total) * 360;
@@ -153,9 +165,28 @@ function buildMapCenter(equipments: Equipment[]) {
 }
 
 function statusAccent(status: Equipment["status"]) {
-  if (status === "Disponivel") return "#1f7a1f";
-  if (status === "Solicitado") return "#d92d20";
-  return "#f59e0b";
+  if (status === "Disponivel") return statusPalette.estoque;
+  if (status === "Solicitado") return statusPalette.solicitado;
+  return statusPalette.analise;
+}
+
+function municipalityAccent(
+  municipalityEquipments: Equipment[],
+  municipalitySolicitations: Solicitation[],
+) {
+  if (municipalitySolicitations.some((item) => item.decisaoAdmin === "Aprovado")) {
+    return statusPalette.aprovado;
+  }
+
+  if (municipalityEquipments.some((item) => item.status === "Solicitado")) {
+    return statusPalette.solicitado;
+  }
+
+  if (municipalityEquipments.some((item) => item.status === "Em analise")) {
+    return statusPalette.analise;
+  }
+
+  return statusPalette.estoque;
 }
 
 function AppShell({
@@ -353,6 +384,11 @@ function DashboardPage({
       count,
       coordinates: municipalityCoordinates[municipio],
       statuses: filteredEquipments.filter((item) => item.municipio === municipio),
+      solicitations: filteredSolicitations.filter((item) =>
+        filteredEquipments.some(
+          (equipment) => equipment.id === item.equipamentoId && equipment.municipio === municipio,
+        ),
+      ),
     }))
     .filter((item) => item.coordinates);
 
@@ -504,6 +540,7 @@ function DashboardPage({
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               {municipalityMapData.map((item) => {
+                const markerColor = municipalityAccent(item.statuses, item.solicitations);
                 const status = item.statuses[0]?.status ?? "Disponivel";
                 return (
                   <CircleMarker
@@ -516,7 +553,7 @@ function DashboardPage({
                     pathOptions={{
                       color: "#ffffff",
                       weight: 2,
-                      fillColor: statusAccent(status),
+                      fillColor: markerColor,
                       fillOpacity: 0.9,
                     }}
                   >

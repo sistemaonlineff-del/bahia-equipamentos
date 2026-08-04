@@ -13,6 +13,10 @@
   --muted: #5d6b79;
   --primary: #005a9c;
   --primary-dark: #00497f;
+  --status-stock: #2e9f3d;
+  --status-review: #f59e0b;
+  --status-requested: #dc2626;
+  --status-approved: #0b6fc2;
   --success-bg: #e7f5ec;
   --success-text: #1f6a3d;
   --warning-bg: #fff4da;
@@ -458,15 +462,15 @@ label {
 }
 
 .dashboard-stat-stock {
-  background: linear-gradient(135deg, #2e7d32, #58b04c);
+  background: linear-gradient(135deg, var(--status-stock), #69c04d);
 }
 
 .dashboard-stat-requested {
-  background: linear-gradient(135deg, #c81e1e, #ef4444);
+  background: linear-gradient(135deg, var(--status-requested), #ef4444);
 }
 
 .dashboard-stat-approved {
-  background: linear-gradient(135deg, #166534, #16a34a);
+  background: linear-gradient(135deg, var(--status-approved), #38bdf8);
 }
 
 .dashboard-stat-value {
@@ -549,19 +553,19 @@ label {
 }
 
 .legend-dot.stock {
-  background: #1f7a1f;
+  background: var(--status-stock);
 }
 
 .legend-dot.requested {
-  background: #d92d20;
+  background: var(--status-requested);
 }
 
 .legend-dot.approved {
-  background: #005a9c;
+  background: var(--status-approved);
 }
 
 .legend-dot.maintenance {
-  background: #f59e0b;
+  background: var(--status-review);
 }
 
 .map-stage {
