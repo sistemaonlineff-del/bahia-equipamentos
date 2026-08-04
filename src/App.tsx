@@ -7,7 +7,6 @@ import {
   Search,
   Send,
   ShieldCheck,
-  TrendingUp,
   Warehouse,
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -280,6 +279,7 @@ function DashboardPage({
   const [municipioFilter, setMunicipioFilter] = useState("Todos");
   const [sistemaFilter, setSistemaFilter] = useState("Todos");
   const [programaFilter, setProgramaFilter] = useState("Todos");
+  const [decisionFilter, setDecisionFilter] = useState("Todos");
 
   const filterOptions = useMemo(() => {
     return {
@@ -308,8 +308,12 @@ function DashboardPage({
   }, [filteredEquipments]);
 
   const filteredSolicitations = useMemo(() => {
-    return solicitations.filter((item) => filteredEquipmentIds.has(item.equipamentoId));
-  }, [filteredEquipmentIds, solicitations]);
+    return solicitations.filter(
+      (item) =>
+        filteredEquipmentIds.has(item.equipamentoId) &&
+        (decisionFilter === "Todos" || item.decisaoAdmin === decisionFilter),
+    );
+  }, [decisionFilter, filteredEquipmentIds, solicitations]);
 
   const availableCount = filteredEquipments.filter((item) => item.status === "Disponivel").length;
   const requestedCount = filteredEquipments.filter((item) => item.status === "Solicitado").length;
@@ -343,9 +347,6 @@ function DashboardPage({
     approvedCount,
   ]);
   const mapCenter = buildMapCenter(filteredEquipments);
-  const solicitationPendingCount = filteredSolicitations.filter(
-    (item) => item.decisaoAdmin === "Pendente",
-  ).length;
   const municipalityMapData = equipmentByMunicipio
     .map(([municipio, count]) => ({
       municipio,
@@ -355,81 +356,34 @@ function DashboardPage({
     }))
     .filter((item) => item.coordinates);
 
+  function resetInteractiveFilters() {
+    setStatusFilter("Todos");
+    setMunicipioFilter("Todos");
+    setSistemaFilter("Todos");
+    setDecisionFilter("Todos");
+  }
+
+  function toggleStatusFilter(nextStatus: string) {
+    setDecisionFilter("Todos");
+    setStatusFilter((current) => (current === nextStatus ? "Todos" : nextStatus));
+  }
+
+  function toggleDecisionFilter(nextDecision: string) {
+    setStatusFilter("Todos");
+    setDecisionFilter((current) => (current === nextDecision ? "Todos" : nextDecision));
+  }
+
+  function toggleMunicipioFilter(nextMunicipio: string) {
+    setMunicipioFilter((current) => (current === nextMunicipio ? "Todos" : nextMunicipio));
+  }
+
+  function toggleSistemaFilter(nextSistema: string) {
+    setSistemaFilter((current) => (current === nextSistema ? "Todos" : nextSistema));
+  }
+
   return (
     <PageFrame page="dashboard">
-      <section className="dashboard-cards">
-        <article className="dashboard-stat dashboard-stat-stock">
-          <span>Estoque</span>
-          <strong>{availableCount}</strong>
-          <small>Qtd_Estoque</small>
-        </article>
-        <article className="dashboard-stat dashboard-stat-requested">
-          <span>Solicitados</span>
-          <strong>{requestedCount}</strong>
-          <small>Qtd_Solicitados</small>
-        </article>
-        <article className="dashboard-stat dashboard-stat-approved">
-          <span>Aprovados</span>
-          <strong>{approvedCount}</strong>
-          <small>Qtd_Aprovados</small>
-        </article>
-        <article className="dashboard-stat dashboard-stat-value">
-          <span>R$ Valor Estimado</span>
-          <strong>{currencyFormatter(totalEstimatedValue)}</strong>
-          <small>Total da base filtrada</small>
-        </article>
-        <article className="dashboard-stat dashboard-stat-donated">
-          <span>Doados</span>
-          <strong>{donatedCount}</strong>
-          <small>Qtd_Doados</small>
-        </article>
-      </section>
-
-      <section className="dashboard-hero">
-        <article className="dashboard-hero-card">
-          <div>
-            <span className="section-label">Painel analitico</span>
-            <h3>Leitura operacional da base em tempo real</h3>
-            <p>
-              O painel consolida estoque, solicitações e distribuição territorial com
-              foco em acompanhamento rápido da operação.
-            </p>
-          </div>
-          <div className="dashboard-hero-metrics">
-            <div>
-              <span>Solicitacoes pendentes</span>
-              <strong>{solicitationPendingCount}</strong>
-            </div>
-            <div>
-              <span>Municipios mapeados</span>
-              <strong>{equipmentByMunicipio.length}</strong>
-            </div>
-            <div>
-              <span>Ticket medio</span>
-              <strong>
-                {currencyFormatter(
-                  filteredEquipments.length
-                    ? totalEstimatedValue / filteredEquipments.length
-                    : 0,
-                )}
-              </strong>
-            </div>
-          </div>
-        </article>
-        <article className="dashboard-trend-card">
-          <span className="section-label">Resumo rapido</span>
-          <div className="trend-row">
-            <TrendingUp size={18} />
-            <strong>{filteredEquipments.length} registros ativos no recorte atual</strong>
-          </div>
-          <p>
-            Use os filtros abaixo para comparar municípios, sistemas produtivos e
-            programas sem sair do painel.
-          </p>
-        </article>
-      </section>
-
-      <section className="dashboard-filters">
+      <section className="dashboard-filters dashboard-filters-top">
         <label>
           Equipamento
           <select value={equipmentFilter} onChange={(event) => setEquipmentFilter(event.target.value)}>
@@ -472,6 +426,54 @@ function DashboardPage({
         </label>
       </section>
 
+      <section className="dashboard-cards">
+        <button
+          type="button"
+          className={`dashboard-stat dashboard-stat-stock ${statusFilter === "Disponivel" ? "active" : ""}`}
+          onClick={() => toggleStatusFilter("Disponivel")}
+        >
+          <span>Estoque</span>
+          <strong>{availableCount}</strong>
+          <small>Qtd_Estoque</small>
+        </button>
+        <button
+          type="button"
+          className={`dashboard-stat dashboard-stat-requested ${statusFilter === "Solicitado" ? "active" : ""}`}
+          onClick={() => toggleStatusFilter("Solicitado")}
+        >
+          <span>Solicitados</span>
+          <strong>{requestedCount}</strong>
+          <small>Qtd_Solicitados</small>
+        </button>
+        <button
+          type="button"
+          className={`dashboard-stat dashboard-stat-approved ${decisionFilter === "Aprovado" ? "active" : ""}`}
+          onClick={() => toggleDecisionFilter("Aprovado")}
+        >
+          <span>Aprovados</span>
+          <strong>{approvedCount}</strong>
+          <small>Qtd_Aprovados</small>
+        </button>
+        <button
+          type="button"
+          className="dashboard-stat dashboard-stat-value"
+          onClick={resetInteractiveFilters}
+        >
+          <span>R$ Valor Estimado</span>
+          <strong>{currencyFormatter(totalEstimatedValue)}</strong>
+          <small>Total da base filtrada</small>
+        </button>
+        <button
+          type="button"
+          className="dashboard-stat dashboard-stat-donated"
+          onClick={resetInteractiveFilters}
+        >
+          <span>Doados</span>
+          <strong>{donatedCount}</strong>
+          <small>Qtd_Doados</small>
+        </button>
+      </section>
+
       <section className="dashboard-visual-grid">
         <article className="panel dashboard-map-panel">
           <div className="panel-header">
@@ -508,6 +510,9 @@ function DashboardPage({
                     key={item.municipio}
                     center={[item.coordinates.lat, item.coordinates.lng]}
                     radius={Math.max(10, item.count * 4)}
+                    eventHandlers={{
+                      click: () => toggleMunicipioFilter(item.municipio),
+                    }}
                     pathOptions={{
                       color: "#ffffff",
                       weight: 2,
@@ -540,10 +545,10 @@ function DashboardPage({
             <div className="pie-layout">
               <div className="pie-chart" style={pieStyle} />
               <div className="pie-legend">
-                <span><i className="legend-dot stock" />Estoque: {availableCount}</span>
-                <span><i className="legend-dot maintenance" />Em analise: {maintenanceCount}</span>
-                <span><i className="legend-dot requested" />Solicitado: {requestedCount}</span>
-                <span><i className="legend-dot approved" />Aprovado: {approvedCount}</span>
+                <button type="button" className="legend-button" onClick={() => toggleStatusFilter("Disponivel")}><i className="legend-dot stock" />Estoque: {availableCount}</button>
+                <button type="button" className="legend-button" onClick={() => toggleStatusFilter("Em analise")}><i className="legend-dot maintenance" />Em analise: {maintenanceCount}</button>
+                <button type="button" className="legend-button" onClick={() => toggleStatusFilter("Solicitado")}><i className="legend-dot requested" />Solicitado: {requestedCount}</button>
+                <button type="button" className="legend-button" onClick={() => toggleDecisionFilter("Aprovado")}><i className="legend-dot approved" />Aprovado: {approvedCount}</button>
               </div>
             </div>
           </article>
@@ -558,7 +563,12 @@ function DashboardPage({
             <div className="bar-list">
               {equipmentBySystem.length > 0 ? (
                 equipmentBySystem.map(([system, count]) => (
-                  <div key={system} className="bar-row">
+                  <button
+                    key={system}
+                    type="button"
+                    className={`bar-row ${sistemaFilter === system ? "active" : ""}`}
+                    onClick={() => toggleSistemaFilter(system)}
+                  >
                     <div className="bar-copy">
                       <strong>{system}</strong>
                       <span>{count} equipamentos</span>
@@ -566,7 +576,7 @@ function DashboardPage({
                     <div className="bar-track">
                       <span style={{ width: `${(count / maxSystemCount) * 100}%` }} />
                     </div>
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="empty-state">Sem dados para exibir.</div>
@@ -584,13 +594,18 @@ function DashboardPage({
             <div className="municipio-bars">
               {equipmentByMunicipio.length > 0 ? (
                 equipmentByMunicipio.map(([municipio, count]) => (
-                  <div key={municipio} className="municipio-bar">
+                  <button
+                    key={municipio}
+                    type="button"
+                    className={`municipio-bar ${municipioFilter === municipio ? "active" : ""}`}
+                    onClick={() => toggleMunicipioFilter(municipio)}
+                  >
                     <span>{municipio}</span>
                     <div className="municipio-track">
                       <span style={{ height: `${(count / maxMunicipioCount) * 100}%` }} />
                     </div>
                     <strong>{count}</strong>
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="empty-state">Sem dados para exibir.</div>

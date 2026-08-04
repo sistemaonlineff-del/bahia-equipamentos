@@ -343,89 +343,9 @@ label {
 .dashboard-cards,
 .dashboard-filters,
 .dashboard-visual-grid,
-.dashboard-side-grid,
-.dashboard-hero {
+.dashboard-side-grid {
   display: grid;
   gap: 18px;
-}
-
-.dashboard-hero {
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
-}
-
-.dashboard-hero-card,
-.dashboard-trend-card {
-  padding: 22px 24px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(9, 18, 29, 0.08);
-  box-shadow: var(--shadow);
-}
-
-.dashboard-hero-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
-  gap: 18px;
-  align-items: center;
-  background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 24%),
-    linear-gradient(135deg, #0f1720, #123455 58%, #1f6fb2);
-  color: #fff;
-}
-
-.dashboard-hero-card h3,
-.dashboard-trend-card h3 {
-  margin: 12px 0 8px;
-  font-size: 1.45rem;
-}
-
-.dashboard-hero-card p,
-.dashboard-trend-card p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.82);
-  line-height: 1.55;
-}
-
-.dashboard-hero-card .section-label {
-  background: rgba(255, 255, 255, 0.12);
-  color: #e9f6ff;
-}
-
-.dashboard-hero-metrics {
-  display: grid;
-  gap: 12px;
-}
-
-.dashboard-hero-metrics div {
-  padding: 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.dashboard-hero-metrics span {
-  display: block;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 12px;
-}
-
-.dashboard-hero-metrics strong {
-  display: block;
-  margin-top: 6px;
-  font-size: 1.15rem;
-}
-
-.dashboard-trend-card {
-  background:
-    radial-gradient(circle at top right, rgba(132, 204, 22, 0.18), transparent 24%),
-    linear-gradient(180deg, #ffffff, #f5f9fd);
-}
-
-.trend-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin: 14px 0 10px;
-  color: var(--primary-dark);
 }
 
 .dashboard-cards {
@@ -440,6 +360,10 @@ label {
   background:
     linear-gradient(180deg, #ffffff, #f7fbfe);
   box-shadow: var(--shadow);
+}
+
+.dashboard-filters-top {
+  margin-bottom: 2px;
 }
 
 .dashboard-visual-grid {
@@ -493,6 +417,11 @@ label {
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
+  text-align: left;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .dashboard-stat span,
@@ -506,6 +435,15 @@ label {
   margin: 12px 0 6px;
   font-size: 2.2rem;
   letter-spacing: -0.03em;
+}
+
+.dashboard-stat:hover {
+  transform: translateY(-2px);
+}
+
+.dashboard-stat.active {
+  border-color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2), var(--shadow);
 }
 
 .dashboard-stat::after {
@@ -585,6 +523,24 @@ label {
   font-weight: 600;
 }
 
+.legend-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.legend-button:hover {
+  transform: none;
+  color: var(--primary-dark);
+}
+
 .legend-dot {
   width: 10px;
   height: 10px;
@@ -652,6 +608,20 @@ label {
 .bar-row {
   display: grid;
   gap: 8px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+}
+
+.bar-row:hover {
+  background: var(--surface-alt);
+}
+
+.bar-row.active {
+  border-color: rgba(0, 90, 156, 0.22);
+  background: #eef6fd;
 }
 
 .bar-copy {
@@ -692,6 +662,19 @@ label {
   display: grid;
   gap: 8px;
   justify-items: center;
+  padding: 10px 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.municipio-bar:hover {
+  background: var(--surface-alt);
+}
+
+.municipio-bar.active {
+  border-color: rgba(0, 90, 156, 0.22);
+  background: #eef6fd;
 }
 
 .municipio-bar span {
@@ -972,7 +955,6 @@ tbody tr:hover {
   .dashboard-grid,
   .dashboard-cards,
   .dashboard-filters,
-  .dashboard-hero,
   .dashboard-visual-grid,
   .dashboard-side-grid,
   .form-layout,
@@ -1004,10 +986,6 @@ tbody tr:hover {
   .pie-layout {
     grid-template-columns: 1fr;
     min-width: 0;
-  }
-
-  .dashboard-hero-card {
-    grid-template-columns: 1fr;
   }
 
   .toolbar-search {
