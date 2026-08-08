@@ -1,10 +1,13 @@
 import {
+  BellRing,
   Boxes,
   ClipboardList,
   FileText,
+  LogOut,
   MapPinned,
   PackagePlus,
   Paperclip,
+  PencilLine,
   Search,
   Send,
   ShieldCheck,
@@ -16,9 +19,15 @@ import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
 import logo1 from "../assets/logo_1.jpeg";
 import logo2 from "../assets/logo_2.jpeg";
 import { api } from "./api";
-import { mockEquipments, mockSolicitations, optionCatalog } from "./data/mock-data";
+import { mockEquipments, mockSolicitations, mockUsers, optionCatalog } from "./data/mock-data";
 import "./styles.css";
-import type { Equipment, EquipmentAttachment, Solicitation } from "./types/domain";
+import type {
+  AppUser,
+  Equipment,
+  EquipmentAttachment,
+  NotificationItem,
+  Solicitation,
+} from "./types/domain";
 
 type Page = "dashboard" | "novo" | "equipamentos" | "solicitacoes";
 
@@ -37,9 +46,20 @@ type EquipmentFormState = {
 
 type SolicitationFormState = {
   nomeSolicitante: string;
+  emailSolicitante: string;
   contatoSolicitante: string;
   localDestino: string;
   justificativa: string;
+};
+
+type LoginFormState = {
+  email: string;
+  senha: string;
+};
+
+type DecisionFormState = {
+  decisaoAdmin: Solicitation["decisaoAdmin"];
+  observacoes: string;
 };
 
 const initialEquipmentForm: EquipmentFormState = {
@@ -57,9 +77,20 @@ const initialEquipmentForm: EquipmentFormState = {
 
 const initialSolicitationForm: SolicitationFormState = {
   nomeSolicitante: "",
+  emailSolicitante: "",
   contatoSolicitante: "",
   localDestino: "",
   justificativa: "",
+};
+
+const initialLoginForm: LoginFormState = {
+  email: "admin@bahiaequipamentos.com",
+  senha: "Admin@123",
+};
+
+const initialDecisionForm: DecisionFormState = {
+  decisaoAdmin: "Aprovado",
+  observacoes: "",
 };
 
 const pageLabels: Record<Page, string> = {
@@ -86,6 +117,13 @@ function currencyFormatter(value: number) {
 
 function dateFormatter(value: string) {
   return new Intl.DateTimeFormat("pt-BR").format(new Date(`${value}T00:00:00`));
+}
+
+function dateTimeFormatter(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function statusClass(status: string) {
@@ -310,12 +348,16 @@ function AppShell({
   page,
   setPage,
   connected,
+  currentUser,
+  onLogout,
   statusMessage,
   children,
 }: {
   page: Page;
   setPage: (page: Page) => void;
   connected: boolean;
+  currentUser: AppUser;
+  onLogout: () => void;
   statusMessage?: string;
   children: React.ReactNode;
 }) {
@@ -378,11 +420,27 @@ function AppShell({
               <strong>{connected ? "Supabase conectado" : "Mock operacional"}</strong>
             </div>
             <div>
+              <span>Perfil</span>
+              <strong>{currentUser.role === "admin" ? "Administrador" : "Solicitante"}</strong>
+            </div>
+            <div>
               <span>Atualizacao</span>
-              <strong>04/08/2026</strong>
+              <strong>08/08/2026</strong>
             </div>
           </div>
         </header>
+        <div className="session-strip">
+          <div className="session-chip">
+            <strong>{currentUser.nome}</strong>
+            <span>
+              {currentUser.cargo} · {currentUser.email}
+            </span>
+          </div>
+          <button type="button" className="secondary-button session-button" onClick={onLogout}>
+            <LogOut size={15} />
+            Sair
+          </button>
+        </div>
         {statusMessage ? <div className="status-banner">{statusMessage}</div> : null}
         {children}
       </section>
@@ -410,6 +468,87 @@ function PageFrame({
       </section>
       {children}
     </main>
+  );
+}
+
+function LoginScreen({
+  form,
+  error,
+  onChange,
+  onSubmit,
+}: {
+  form: LoginFormState;
+  error: string;
+  onChange: <K extends keyof LoginFormState>(field: K, value: LoginFormState[K]) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <div className="auth-shell">
+      <div className="auth-stage">
+        <section className="auth-brand">
+          <div className="auth-brand-logos">
+            <img src={logo1} alt="Logo CAR" />
+            <img src={logo2} alt="Logo Governo da Bahia" />
+          </div>
+          <span className="topbar-kicker">Bahia Equipamentos</span>
+          <h1>Fluxo administrativo com login, aprovacao e acompanhamento.</h1>
+          <p>
+            Acesse com email e senha para registrar solicitacoes ou entrar no painel
+            administrativo e aprovar pedidos com anexo.
+          </p>
+          <div className="auth-highlight-list">
+            <div className="auth-highlight">
+              <strong>Login por perfil</strong>
+              <span>Administrador e solicitante no mesmo ambiente.</span>
+            </div>
+            <div className="auth-highlight">
+              <strong>Fila de aprovacao</strong>
+              <span>Decisao com observacao, arquivo e notificacao visual.</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="auth-card">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Acesso</span>
+              <h3>Entrar no sistema</h3>
+            </div>
+          </div>
+
+          <form className="auth-form" onSubmit={onSubmit}>
+            <label>
+              Email
+              <input
+                type="email"
+                required
+                value={form.email}
+                onChange={(event) => onChange("email", event.target.value)}
+              />
+            </label>
+            <label>
+              Senha
+              <input
+                type="password"
+                required
+                value={form.senha}
+                onChange={(event) => onChange("senha", event.target.value)}
+              />
+            </label>
+            {error ? <div className="auth-error">{error}</div> : null}
+            <button type="submit" className="primary-button auth-submit">
+              Entrar
+            </button>
+          </form>
+
+          <div className="auth-credentials">
+            <strong>Acessos de teste</strong>
+            <span>`admin@bahiaequipamentos.com` / `Admin@123`</span>
+            <span>`solicitante@bahiaequipamentos.com` / `Solicita@123`</span>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }
 
@@ -825,9 +964,16 @@ function App() {
   const [page, setPage] = useState<Page>("dashboard");
   const [equipments, setEquipments] = useState<Equipment[]>(mockEquipments);
   const [solicitations, setSolicitations] = useState<Solicitation[]>(mockSolicitations);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [loginForm, setLoginForm] = useState<LoginFormState>(initialLoginForm);
+  const [loginError, setLoginError] = useState("");
   const [equipmentForm, setEquipmentForm] = useState<EquipmentFormState>(initialEquipmentForm);
   const [solicitationForm, setSolicitationForm] = useState<SolicitationFormState>(initialSolicitationForm);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [selectedSolicitation, setSelectedSolicitation] = useState<Solicitation | null>(null);
+  const [decisionForm, setDecisionForm] = useState<DecisionFormState>(initialDecisionForm);
+  const [decisionFile, setDecisionFile] = useState<File | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewAttachment, setPreviewAttachment] = useState<EquipmentAttachment | null>(null);
   const [search, setSearch] = useState("");
@@ -896,6 +1042,19 @@ function App() {
     return optionCatalog.enderecosPorMunicipio[equipmentForm.municipio] ?? [];
   }, [equipmentForm.municipio]);
 
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    setSolicitationForm((current) => ({
+      ...current,
+      nomeSolicitante: current.nomeSolicitante || currentUser.nome,
+      emailSolicitante: current.emailSolicitante || currentUser.email,
+      contatoSolicitante: current.contatoSolicitante || currentUser.telefone || "",
+    }));
+  }, [currentUser]);
+
   function updateEquipmentForm<K extends keyof EquipmentFormState>(
     field: K,
     value: EquipmentFormState[K],
@@ -925,6 +1084,58 @@ function App() {
       ...current,
       [field]: value,
     }));
+  }
+
+  function updateLoginForm<K extends keyof LoginFormState>(field: K, value: LoginFormState[K]) {
+    setLoginForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function updateDecisionForm<K extends keyof DecisionFormState>(
+    field: K,
+    value: DecisionFormState[K],
+  ) {
+    setDecisionForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const foundUser = mockUsers.find(
+      (user) =>
+        user.email.toLowerCase() === loginForm.email.trim().toLowerCase() &&
+        user.senha === loginForm.senha,
+    );
+
+    if (!foundUser) {
+      setLoginError("Email ou senha invalidos.");
+      return;
+    }
+
+    setCurrentUser(foundUser);
+    setLoginError("");
+    setStatusMessage(`Sessao iniciada com sucesso para ${foundUser.nome}.`);
+    setPage(foundUser.role === "admin" ? "dashboard" : "equipamentos");
+    setSolicitationForm((current) => ({
+      ...current,
+      nomeSolicitante: foundUser.nome,
+      emailSolicitante: foundUser.email,
+      contatoSolicitante: foundUser.telefone ?? current.contatoSolicitante,
+    }));
+  }
+
+  function handleLogout() {
+    setCurrentUser(null);
+    setSelectedEquipment(null);
+    setSelectedSolicitation(null);
+    setDecisionFile(null);
+    setDecisionForm(initialDecisionForm);
+    setStatusMessage("");
   }
 
   async function handleEquipmentSubmit(event: FormEvent<HTMLFormElement>) {
@@ -968,7 +1179,7 @@ function App() {
   async function handleSolicitationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!selectedEquipment) {
+    if (!selectedEquipment || !currentUser) {
       return;
     }
 
@@ -976,17 +1187,24 @@ function App() {
       equipamentoId: selectedEquipment.id,
       equipamentoNome: selectedEquipment.nome,
       nomeSolicitante: solicitationForm.nomeSolicitante,
+      emailSolicitante: solicitationForm.emailSolicitante,
       contatoSolicitante: formatPhone(solicitationForm.contatoSolicitante),
       localDestino: solicitationForm.localDestino,
       justificativa: solicitationForm.justificativa,
       decisaoAdmin: "Pendente" as const,
       observacoes: "Aguardando avaliacao administrativa.",
-      dataSolicitacao: "2026-08-04",
+      dataSolicitacao: "2026-08-08",
     };
 
     try {
       const response = await api.createSolicitation(newSolicitation);
-      setSolicitations((current) => [response.item, ...current]);
+      setSolicitations((current) => [
+        {
+          ...response.item,
+          emailSolicitante: solicitationForm.emailSolicitante,
+        },
+        ...current,
+      ]);
       setEquipments((current) =>
         current.map((equipment) =>
           equipment.id === selectedEquipment.id
@@ -1004,11 +1222,103 @@ function App() {
     }
   }
 
+  async function handleDecisionSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedSolicitation || !currentUser) {
+      return;
+    }
+
+    const attachmentPayload = decisionFile
+      ? {
+          name: decisionFile.name,
+          url: await readFileAsDataUrl(decisionFile),
+        }
+      : undefined;
+
+    try {
+      const response = await api.updateSolicitationDecision({
+        solicitationId: selectedSolicitation.id,
+        decisaoAdmin: decisionForm.decisaoAdmin,
+        nomeAdmin: currentUser.nome,
+        observacoes: decisionForm.observacoes,
+      });
+
+      setSolicitations((current) =>
+        current.map((item) =>
+          item.id === selectedSolicitation.id
+            ? {
+                ...item,
+                nomeAdmin: currentUser.nome,
+                decisaoAdmin: decisionForm.decisaoAdmin,
+                observacoes: decisionForm.observacoes,
+                arquivoDecisao: attachmentPayload,
+              }
+            : item,
+        ),
+      );
+
+      setEquipments((current) =>
+        current.map((equipment) =>
+          equipment.id === selectedSolicitation.equipamentoId
+            ? {
+                ...equipment,
+                status: decisionForm.decisaoAdmin === "Recusado" ? "Disponivel" : "Solicitado",
+              }
+            : equipment,
+        ),
+      );
+
+      setNotifications((current) => [
+        {
+          id: crypto.randomUUID(),
+          solicitationId: selectedSolicitation.id,
+          recipientName: selectedSolicitation.nomeSolicitante,
+          recipientEmail: selectedSolicitation.emailSolicitante,
+          title:
+            decisionForm.decisaoAdmin === "Aprovado"
+              ? "Solicitacao aprovada"
+              : "Solicitacao recusada",
+          message:
+            decisionForm.decisaoAdmin === "Aprovado"
+              ? `A solicitacao de ${selectedSolicitation.equipamentoNome} foi aprovada por ${currentUser.nome}.`
+              : `A solicitacao de ${selectedSolicitation.equipamentoNome} foi recusada por ${currentUser.nome}.`,
+          createdAt: new Date().toISOString(),
+          status: "Enviada",
+        },
+        ...current,
+      ]);
+
+      setStatusMessage(
+        `${response.message} Notificacao preparada para ${selectedSolicitation.nomeSolicitante}.`,
+      );
+      setSelectedSolicitation(null);
+      setDecisionForm(initialDecisionForm);
+      setDecisionFile(null);
+    } catch (error) {
+      console.error(error);
+      setStatusMessage("Nao foi possivel salvar a decisao administrativa.");
+    }
+  }
+
+  if (!currentUser) {
+    return (
+      <LoginScreen
+        form={loginForm}
+        error={loginError}
+        onChange={updateLoginForm}
+        onSubmit={handleLogin}
+      />
+    );
+  }
+
   return (
     <AppShell
       page={page}
       setPage={setPage}
       connected={api.isConnected}
+      currentUser={currentUser}
+      onLogout={handleLogout}
       statusMessage={statusMessage}
     >
       {page === "dashboard" && (
@@ -1245,6 +1555,74 @@ function App() {
 
       {page === "solicitacoes" && (
         <PageFrame page="solicitacoes">
+          <section className="request-admin-grid">
+            <div className="panel request-summary-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-label">Solicitacoes</span>
+                  <h3>Acompanhamento administrativo dos pedidos registrados.</h3>
+                </div>
+              </div>
+
+              <div className="request-kpi-grid">
+                <article className="request-kpi">
+                  <span>Total</span>
+                  <strong>{solicitations.length}</strong>
+                  <small>Pedidos no fluxo</small>
+                </article>
+                <article className="request-kpi">
+                  <span>Pendentes</span>
+                  <strong>{solicitations.filter((item) => item.decisaoAdmin === "Pendente").length}</strong>
+                  <small>Aguardando parecer</small>
+                </article>
+                <article className="request-kpi">
+                  <span>Aprovadas</span>
+                  <strong>{solicitations.filter((item) => item.decisaoAdmin === "Aprovado").length}</strong>
+                  <small>Liberadas pelo admin</small>
+                </article>
+                <article className="request-kpi">
+                  <span>Notificacoes</span>
+                  <strong>{notifications.length}</strong>
+                  <small>Envios preparados</small>
+                </article>
+              </div>
+            </div>
+
+            <div className="panel request-notification-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-label">Retorno</span>
+                  <h3>Notificacoes recentes</h3>
+                </div>
+              </div>
+
+              <div className="notification-list">
+                {notifications.length > 0 ? (
+                  notifications.slice(0, 4).map((item) => (
+                    <article key={item.id} className="notification-card">
+                      <div className="notification-card-icon">
+                        <BellRing size={16} />
+                      </div>
+                      <div className="notification-card-copy">
+                        <strong>{item.title}</strong>
+                        <span>
+                          {item.recipientName}
+                          {item.recipientEmail ? ` · ${item.recipientEmail}` : ""}
+                        </span>
+                        <p>{item.message}</p>
+                      </div>
+                      <small>{dateTimeFormatter(item.createdAt)}</small>
+                    </article>
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    As notificacoes aparecerao aqui assim que uma solicitacao for analisada.
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
           <section className="panel">
             <div className="panel-header">
               <div>
@@ -1264,6 +1642,8 @@ function App() {
                     <th>Status</th>
                     <th>Administrador</th>
                     <th>Observacoes</th>
+                    <th>Anexo</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1275,6 +1655,7 @@ function App() {
                         <div className="cell-stack">
                           <strong>{item.nomeSolicitante}</strong>
                           <span>{item.contatoSolicitante}</span>
+                          <span>{item.emailSolicitante ?? "Email nao informado"}</span>
                         </div>
                       </td>
                       <td>{item.localDestino}</td>
@@ -1285,6 +1666,45 @@ function App() {
                       </td>
                       <td>{item.nomeAdmin ?? "A definir"}</td>
                       <td>{item.observacoes ?? "-"}</td>
+                      <td>
+                        {item.arquivoDecisao ? (
+                          <button
+                            type="button"
+                            className="table-button"
+                            onClick={() => setPreviewAttachment(item.arquivoDecisao ?? null)}
+                          >
+                            <Paperclip size={14} />
+                            Ver anexo
+                          </button>
+                        ) : (
+                          <span className="table-empty">Sem anexo</span>
+                        )}
+                      </td>
+                      <td className="cell-action">
+                        <button
+                          type="button"
+                          className="table-button table-icon-button"
+                          onClick={() => {
+                            setSelectedSolicitation(item);
+                            setDecisionForm({
+                              decisaoAdmin:
+                                item.decisaoAdmin === "Pendente"
+                                  ? "Aprovado"
+                                  : item.decisaoAdmin,
+                              observacoes: item.observacoes ?? "",
+                            });
+                            setDecisionFile(null);
+                          }}
+                          disabled={currentUser.role !== "admin"}
+                          title={
+                            currentUser.role === "admin"
+                              ? "Editar decisao"
+                              : "Apenas administradores podem decidir"
+                          }
+                        >
+                          <PencilLine size={15} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1320,6 +1740,17 @@ function App() {
                   value={solicitationForm.nomeSolicitante}
                   onChange={(event) =>
                     updateSolicitationForm("nomeSolicitante", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Email
+                <input
+                  type="email"
+                  required
+                  value={solicitationForm.emailSolicitante}
+                  onChange={(event) =>
+                    updateSolicitationForm("emailSolicitante", event.target.value)
                   }
                 />
               </label>
@@ -1360,6 +1791,100 @@ function App() {
               <div className="form-actions span-2">
                 <button type="submit" className="primary-button">
                   Registrar solicitacao
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {selectedSolicitation && currentUser.role === "admin" && (
+        <div className="modal-backdrop" role="presentation">
+          <div className="modal-card">
+            <div className="modal-header">
+              <div>
+                <span className="section-label">Decisao administrativa</span>
+                <h3>{selectedSolicitation.equipamentoNome}</h3>
+                <p>
+                  Revise o pedido, defina o parecer, anexe um arquivo se precisar e
+                  registre o retorno para o solicitante.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setSelectedSolicitation(null);
+                  setDecisionForm(initialDecisionForm);
+                  setDecisionFile(null);
+                }}
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="decision-summary">
+              <div className="summary-row">
+                <span>Solicitante</span>
+                <strong>{selectedSolicitation.nomeSolicitante}</strong>
+              </div>
+              <div className="summary-row">
+                <span>Destino</span>
+                <strong>{selectedSolicitation.localDestino}</strong>
+              </div>
+              <div className="summary-row">
+                <span>Contato</span>
+                <strong>{selectedSolicitation.contatoSolicitante}</strong>
+              </div>
+            </div>
+
+            <form className="form-grid" onSubmit={handleDecisionSubmit}>
+              <label>
+                Decisao
+                <select
+                  value={decisionForm.decisaoAdmin}
+                  onChange={(event) =>
+                    updateDecisionForm(
+                      "decisaoAdmin",
+                      event.target.value as Solicitation["decisaoAdmin"],
+                    )
+                  }
+                >
+                  <option value="Aprovado">Aprovar</option>
+                  <option value="Recusado">Recusar</option>
+                  <option value="Pendente">Manter pendente</option>
+                </select>
+              </label>
+              <label>
+                Arquivo da decisao
+                <input
+                  type="file"
+                  onChange={(event) => setDecisionFile(event.target.files?.[0] ?? null)}
+                />
+              </label>
+              <label className="span-2">
+                Observacoes
+                <textarea
+                  required
+                  rows={5}
+                  value={decisionForm.observacoes}
+                  onChange={(event) =>
+                    updateDecisionForm("observacoes", event.target.value)
+                  }
+                />
+              </label>
+              <div className="file-list span-2">
+                {decisionFile ? (
+                  <span className="file-chip">{decisionFile.name}</span>
+                ) : (
+                  <span className="file-helper">
+                    Opcional: anexe um arquivo para acompanhar a aprovacao ou recusa.
+                  </span>
+                )}
+              </div>
+              <div className="form-actions span-2">
+                <button type="submit" className="primary-button">
+                  Salvar decisao
                 </button>
               </div>
             </form>

@@ -1,4 +1,4 @@
-import { Equipment, OptionCatalog, Solicitation } from "@/types/domain";
+import { AppUser, Equipment, OptionCatalog, Solicitation } from "@/types/domain";
 
 export const optionCatalog: OptionCatalog = {
   sistemasProdutivos: [
@@ -72,6 +72,7 @@ export const mockSolicitations: Solicitation[] = [
     equipamentoId: "2",
     equipamentoNome: "Camara fria modular",
     nomeSolicitante: "Marina Souza",
+    emailSolicitante: "marina.souza@bahiaequipamentos.com",
     contatoSolicitante: "(71) 99999-4444",
     localDestino: "Associacao de Pescadores do Pontal",
     justificativa: "Atender cadeia de frio para armazenamento do pescado local.",
@@ -85,11 +86,33 @@ export const mockSolicitations: Solicitation[] = [
     equipamentoId: "3",
     equipamentoNome: "Kit de irrigacao por gotejamento",
     nomeSolicitante: "Carlos Menezes",
+    emailSolicitante: "carlos.menezes@bahiaequipamentos.com",
     contatoSolicitante: "(74) 98888-2211",
     localDestino: "Povoado Lagoa do Meio",
     justificativa: "Uso compartilhado em area piloto de producao de hortifruti.",
     decisaoAdmin: "Pendente",
     observacoes: "Aguardando visita tecnica.",
     dataSolicitacao: "2026-07-28",
+  },
+];
+
+export const mockUsers: AppUser[] = [
+  {
+    id: "u1",
+    nome: "Paula Administradora",
+    email: "admin@bahiaequipamentos.com",
+    senha: "Admin@123",
+    cargo: "Administradora operacional",
+    role: "admin",
+    telefone: "(71) 98888-1200",
+  },
+  {
+    id: "u2",
+    nome: "Nieres Solicitacoes",
+    email: "solicitante@bahiaequipamentos.com",
+    senha: "Solicita@123",
+    cargo: "Solicitante regional",
+    role: "solicitante",
+    telefone: "(73) 99940-1298",
   },
 ];

@@ -1,4 +1,5 @@
 export type DecisionStatus = "Aprovado" | "Recusado" | "Pendente";
+export type UserRole = "admin" | "solicitante";
 
 export type EquipmentAttachment = {
   name: string;
@@ -26,13 +27,36 @@ export type Solicitation = {
   equipamentoId: string;
   equipamentoNome: string;
   nomeSolicitante: string;
+  emailSolicitante?: string;
   contatoSolicitante: string;
   localDestino: string;
   justificativa: string;
   nomeAdmin?: string;
   decisaoAdmin: DecisionStatus;
   observacoes?: string;
+  arquivoDecisao?: EquipmentAttachment;
   dataSolicitacao: string;
+};
+
+export type AppUser = {
+  id: string;
+  nome: string;
+  email: string;
+  senha: string;
+  cargo: string;
+  role: UserRole;
+  telefone?: string;
+};
+
+export type NotificationItem = {
+  id: string;
+  solicitationId: string;
+  recipientName: string;
+  recipientEmail?: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  status: "Enviada" | "Nao lida";
 };
 
 export type OptionCatalog = {

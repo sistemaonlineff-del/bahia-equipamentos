@@ -335,4 +335,34 @@ export const api = {
       item: mapSolicitationRecord(insertedSolicitation),
     };
   },
+
+  async updateSolicitationDecision(payload: {
+    solicitationId: string;
+    decisaoAdmin: Solicitation["decisaoAdmin"];
+    nomeAdmin: string;
+    observacoes?: string;
+  }) {
+    if (!supabase) {
+      return {
+        message: "Decisao registrada localmente em modo mock.",
+      };
+    }
+
+    const { error } = await supabase
+      .from("solicitacoes")
+      .update({
+        decisao_admin: payload.decisaoAdmin,
+        nome_admin: payload.nomeAdmin,
+        observacoes: payload.observacoes ?? null,
+      })
+      .eq("id", payload.solicitationId);
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      message: "Decisao administrativa salva no Supabase.",
+    };
+  },
 };

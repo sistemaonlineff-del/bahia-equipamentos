@@ -1,0 +1,167 @@
+LOG DE ALTERACOES - PROJETO BAHIA EQUIPAMENTOS
+Data de atualizacao: 2026-08-04
+
+1. ORIGEM DO PROJETO
+- O projeto nasceu da necessidade de transformar um PowerApps em uma aplicacao web.
+- O material inicial recebido foi o arquivo "Tela inicial.docx".
+- A partir dele foi feito o mapeamento da logica da tela inicial.
+
+2. ANALISE DO POWERAPPS
+- Foi analisado o documento "Tela inicial.docx".
+- Foi gerado um resumo tecnico da logica em "powerapps_migracao_resumo.md".
+- A logica identificada incluiu:
+  - Novo Equipamento
+  - Consultar Equipamentos
+  - Popup de Solicitacao
+  - Tela de Solicitacoes
+  - Regra de dependencia entre Municipio e Endereco
+
+3. PRIMEIRA ESTRUTURA DO PROJETO
+- O projeto foi iniciado do zero na pasta:
+  C:\Users\fabio\Documents\Projeto_Bahia_dois
+- Inicialmente foi montada uma base web para a nova aplicacao.
+- Depois a estrutura foi alinhada com o projeto de referencia:
+  C:\Users\fabio\Documents\sistema_bahia
+
+4. DEFINICAO DE STACK
+- A stack final escolhida para este projeto foi:
+  - Vite
+  - React
+  - TypeScript
+  - Supabase
+  - Vercel
+- A decisao foi tomada para manter compatibilidade com o projeto Bahia ja publicado.
+
+5. REFERENCIA VISUAL E TECNICA
+- O projeto "sistema_bahia" foi usado como referencia de:
+  - linguagem visual
+  - estrutura tecnica
+  - padrao de deploy
+- Foram copiados os logos do projeto de referencia:
+  - assets/logo_1.jpeg
+  - assets/logo_2.jpeg
+
+6. ARQUIVOS E ESTRUTURA CRIADOS
+- Foram criados e ajustados os principais arquivos:
+  - package.json
+  - tsconfig.json
+  - vite.config.ts
+  - vercel.json
+  - index.html
+  - README.md
+  - .env.example
+  - src/main.tsx
+  - src/App.tsx
+  - src/styles.css
+  - src/api.ts
+  - src/data/mock-data.ts
+  - src/types/domain.ts
+  - src/lib/supabase.ts
+  - supabase/schema.sql
+
+7. LOGICA IMPLEMENTADA NO APP
+- Foi implementado o fluxo de cadastro de equipamento.
+- Foi implementada a tela de consulta de equipamentos.
+- Foi implementado o popup/modal de solicitacao.
+- Foi implementada a tela de solicitacoes.
+- Foi mantida a logica de endereco dependente do municipio.
+- Foram usados dados mockados para simular o funcionamento inicial.
+
+8. BANCO E SUPABASE
+- Foi criado um schema inicial em:
+  - supabase/schema.sql
+- O schema contempla a base inicial para:
+  - municipios
+  - enderecos
+  - sistemas_produtivos
+  - condicoes
+  - programas
+  - equipamentos
+  - equipamento_anexos
+  - solicitacoes
+- Ainda nao foi conectado um projeto Supabase real.
+- O sistema ainda funciona com mocks no frontend.
+
+9. GIT E VERSIONAMENTO
+- O Git foi inicializado localmente nesta pasta.
+- A branch principal foi definida como:
+  - main
+- O repositório remoto foi conectado ao GitHub:
+  - https://github.com/sistemaonlineff-del/bahia-equipamentos.git
+
+10. COMMITS IMPORTANTES FEITOS
+- feat: estrutura inicial do bahia equipamentos
+- feat: refina interface do bahia equipamentos
+- feat: simplifica visual do bahia equipamentos
+- feat: eleva acabamento visual do bahia equipamentos
+- feat: renova paleta visual do bahia equipamentos
+- feat: reestrutura layout do bahia equipamentos
+
+11. DEPLOY E PUBLICACAO
+- O projeto foi publicado na Vercel.
+- URL atual publicada:
+  - https://bahia-equipamentos.vercel.app/
+- O deploy foi configurado a partir do GitHub, com atualizacao automatica a cada push.
+
+12. EVOLUCAO DO FRONTEND
+- O frontend passou por varias rodadas de refinamento.
+- Primeiro foi criada uma interface funcional.
+- Depois foi alinhado ao estilo do sistema Bahia.
+- Em seguida foram feitas rodadas de refinamento estetico.
+- Por fim, o layout foi refeito de forma mais profunda, mudando:
+  - composicao geral
+  - hero principal
+  - sidebar
+  - area de metricas
+  - cartoes de acao
+  - galeria de equipamentos
+  - pagina de solicitacoes
+- A direcao atual busca um visual:
+  - mais profissional
+  - mais autoral
+  - mais premium
+  - menos cara de sistema padrao
+
+13. ESTADO ATUAL DO PROJETO
+- O sistema esta online e funcionando com dados mockados.
+- O layout atual ja foi bastante retrabalhado.
+- O GitHub esta conectado.
+- A Vercel esta conectada.
+- O build estava passando normalmente na ultima validacao local.
+
+14. PENDENCIAS IMPORTANTES
+- Conectar um Supabase real.
+- Criar as tabelas reais no banco.
+- Substituir os mocks por leitura e escrita reais.
+- Configurar upload de anexos com Supabase Storage.
+- Se necessario, seguir com novas rodadas de refinamento visual.
+
+15. ARQUIVOS DE APOIO IMPORTANTES
+- powerapps_migracao_resumo.md
+- Tela inicial.docx
+- Tela inicial.pdf
+- supabase/schema.sql
+
+16. OBSERVACAO PARA CONTINUIDADE
+- Este arquivo foi criado para servir como memoria operacional do projeto.
+- Ao retomar o trabalho no futuro, ler primeiro:
+  - Log_Alterações.txt
+  - powerapps_migracao_resumo.md
+  - README.md
+17. ALTERACOES DE 08/08/2026
+- Foi criada uma tela de login com acesso por email e senha.
+- Foram adicionados perfis mockados de administrador e solicitante para validar o fluxo.
+- O shell principal passou a exibir o usuario logado e opcao de sair da sessao.
+- O formulario de solicitacao passou a capturar tambem o email do solicitante.
+- A tela de solicitacoes foi expandida para um painel administrativo mais completo.
+- Foi adicionada uma coluna de acao com lapis para editar cada solicitacao.
+- Foi criado um modal de decisao administrativa para:
+  - aprovar
+  - recusar
+  - manter pendente
+  - escrever observacoes
+  - anexar arquivo da decisao
+- Foi adicionada uma area de notificacoes recentes no frontend.
+- Ao salvar uma decisao, o sistema agora gera uma notificacao visual para o solicitante.
+- Foi criada integracao de update da decisao administrativa via src/api.ts.
+- O build foi validado com sucesso apos essas alteracoes usando npm run build.
