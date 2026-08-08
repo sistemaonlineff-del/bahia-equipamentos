@@ -10,7 +10,9 @@ import {
   PencilLine,
   Search,
   Send,
+  Settings2,
   ShieldCheck,
+  UserCog,
   Warehouse,
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -29,7 +31,7 @@ import type {
   Solicitation,
 } from "./types/domain";
 
-type Page = "dashboard" | "novo" | "equipamentos" | "solicitacoes";
+type Page = "dashboard" | "novo" | "equipamentos" | "solicitacoes" | "configuracoes";
 
 type EquipmentFormState = {
   nome: string;
@@ -60,6 +62,16 @@ type LoginFormState = {
 type DecisionFormState = {
   decisaoAdmin: Solicitation["decisaoAdmin"];
   observacoes: string;
+};
+
+type UserFormState = {
+  nome: string;
+  email: string;
+  senha: string;
+  cargo: string;
+  telefone: string;
+  role: AppUser["role"];
+  ativo: boolean;
 };
 
 const initialEquipmentForm: EquipmentFormState = {
@@ -93,11 +105,22 @@ const initialDecisionForm: DecisionFormState = {
   observacoes: "",
 };
 
+const initialUserForm: UserFormState = {
+  nome: "",
+  email: "",
+  senha: "",
+  cargo: "",
+  telefone: "",
+  role: "usuario",
+  ativo: true,
+};
+
 const pageLabels: Record<Page, string> = {
   dashboard: "Painel",
   novo: "Cadastrar",
   equipamentos: "Equipamentos",
   solicitacoes: "Solicitacoes",
+  configuracoes: "Configuracoes",
 };
 
 const pageDescriptions: Record<Page, string> = {
@@ -105,6 +128,7 @@ const pageDescriptions: Record<Page, string> = {
   novo: "Cadastro padronizado de equipamentos e dados operacionais.",
   equipamentos: "Consulta da base com busca rapida e acao de solicitacao.",
   solicitacoes: "Acompanhamento administrativo dos pedidos registrados.",
+  configuracoes: "Gestao de acessos, cargos e perfis do sistema.",
 };
 
 function currencyFormatter(value: number) {
@@ -130,6 +154,10 @@ function statusClass(status: string) {
   if (status === "Disponivel" || status === "Aprovado") return "status-positive";
   if (status === "Solicitado" || status === "Recusado") return "status-negative";
   return "status-warning";
+}
+
+function roleLabel(role: AppUser["role"]) {
+  return role === "admin" ? "Administrador" : "Usuario";
 }
 
 function formatPhone(value: string) {
@@ -366,6 +394,15 @@ function AppShell({
     { id: "novo", icon: <PackagePlus size={18} />, caption: "Novo registro" },
     { id: "equipamentos", icon: <Warehouse size={18} />, caption: "Base cadastrada" },
     { id: "solicitacoes", icon: <ClipboardList size={18} />, caption: "Fila de pedidos" },
+    ...(currentUser.role === "admin"
+      ? [
+          {
+            id: "configuracoes" as Page,
+            icon: <Settings2 size={18} />,
+            caption: "Acessos e perfis",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -421,7 +458,7 @@ function AppShell({
             </div>
             <div>
               <span>Perfil</span>
-              <strong>{currentUser.role === "admin" ? "Administrador" : "Solicitante"}</strong>
+              <strong>{roleLabel(currentUser.role)}</strong>
             </div>
             <div>
               <span>Atualizacao</span>
@@ -499,7 +536,7 @@ function LoginScreen({
           <div className="auth-highlight-list">
             <div className="auth-highlight">
               <strong>Login por perfil</strong>
-              <span>Administrador e solicitante no mesmo ambiente.</span>
+              <span>Administrador e usuario no mesmo ambiente.</span>
             </div>
             <div className="auth-highlight">
               <strong>Fila de aprovacao</strong>
@@ -544,11 +581,226 @@ function LoginScreen({
           <div className="auth-credentials">
             <strong>Acessos de teste</strong>
             <span>`admin@bahiaequipamentos.com` / `Admin@123`</span>
-            <span>`solicitante@bahiaequipamentos.com` / `Solicita@123`</span>
+            <span>`usuario@bahiaequipamentos.com` / `Solicita@123`</span>
           </div>
         </section>
       </div>
     </div>
+  );
+}
+
+function AccessSettingsPage({
+  users,
+  currentUser,
+  form,
+  editingUserId,
+  onChange,
+  onSubmit,
+  onEdit,
+  onToggleStatus,
+  onCancelEdit,
+}: {
+  users: AppUser[];
+  currentUser: AppUser;
+  form: UserFormState;
+  editingUserId: string | null;
+  onChange: <K extends keyof UserFormState>(field: K, value: UserFormState[K]) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onEdit: (user: AppUser) => void;
+  onToggleStatus: (userId: string) => void;
+  onCancelEdit: () => void;
+}) {
+  const activeUsers = users.filter((item) => item.ativo).length;
+  const adminUsers = users.filter((item) => item.role === "admin").length;
+
+  return (
+    <PageFrame page="configuracoes">
+      <section className="settings-grid">
+        <div className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Controle de acesso</span>
+              <h3>Usuarios, cargos e liberacao de login</h3>
+            </div>
+          </div>
+
+          <div className="request-kpi-grid">
+            <article className="request-kpi">
+              <span>Usuarios</span>
+              <strong>{users.length}</strong>
+              <small>Perfis cadastrados</small>
+            </article>
+            <article className="request-kpi">
+              <span>Ativos</span>
+              <strong>{activeUsers}</strong>
+              <small>Com acesso liberado</small>
+            </article>
+            <article className="request-kpi">
+              <span>Administradores</span>
+              <strong>{adminUsers}</strong>
+              <small>Com controle total</small>
+            </article>
+            <article className="request-kpi">
+              <span>Sessao atual</span>
+              <strong>{roleLabel(currentUser.role)}</strong>
+              <small>{currentUser.nome}</small>
+            </article>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-label">Novo acesso</span>
+              <h3>{editingUserId ? "Editar usuario" : "Cadastrar usuario"}</h3>
+            </div>
+          </div>
+
+          <form className="form-grid" onSubmit={onSubmit}>
+            <label>
+              Nome
+              <input
+                required
+                value={form.nome}
+                onChange={(event) => onChange("nome", event.target.value)}
+              />
+            </label>
+            <label>
+              Email
+              <input
+                type="email"
+                required
+                value={form.email}
+                onChange={(event) => onChange("email", event.target.value)}
+              />
+            </label>
+            <label>
+              Senha
+              <input
+                required
+                value={form.senha}
+                onChange={(event) => onChange("senha", event.target.value)}
+              />
+            </label>
+            <label>
+              Telefone
+              <input
+                value={form.telefone}
+                onChange={(event) => onChange("telefone", formatPhone(event.target.value))}
+              />
+            </label>
+            <label>
+              Cargo
+              <select
+                value={form.role}
+                onChange={(event) =>
+                  onChange("role", event.target.value as UserFormState["role"])
+                }
+              >
+                <option value="usuario">Usuario</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </label>
+            <label>
+              Descricao do cargo
+              <input
+                required
+                value={form.cargo}
+                onChange={(event) => onChange("cargo", event.target.value)}
+              />
+            </label>
+            <label className="toggle-field span-2">
+              <input
+                type="checkbox"
+                checked={form.ativo}
+                onChange={(event) => onChange("ativo", event.target.checked)}
+              />
+              <span>Liberar acesso para este usuario</span>
+            </label>
+            <div className="form-actions span-2 form-actions-between">
+              {editingUserId ? (
+                <button type="button" className="secondary-button" onClick={onCancelEdit}>
+                  Cancelar edicao
+                </button>
+              ) : (
+                <span className="file-helper">Defina cargo e situacao do acesso aqui.</span>
+              )}
+              <button type="submit" className="primary-button">
+                {editingUserId ? "Salvar alteracoes" : "Criar acesso"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="section-label">Permissoes</span>
+            <h3>Lista de usuarios e niveis de acesso</h3>
+          </div>
+        </div>
+
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Contato</th>
+                <th>Cargo</th>
+                <th>Perfil</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td>
+                    <div className="cell-stack">
+                      <strong>{user.nome}</strong>
+                      <span>{user.email}</span>
+                    </div>
+                  </td>
+                  <td>{user.telefone || "-"}</td>
+                  <td>{user.cargo}</td>
+                  <td>
+                    <span className={`status-pill ${user.role === "admin" ? "status-positive" : "status-warning"}`}>
+                      {roleLabel(user.role)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-pill ${user.ativo ? "status-positive" : "status-negative"}`}>
+                      {user.ativo ? "Ativo" : "Bloqueado"}
+                    </span>
+                  </td>
+                  <td className="cell-action">
+                    <div className="table-actions">
+                      <button
+                        type="button"
+                        className="table-button table-icon-button"
+                        onClick={() => onEdit(user)}
+                        title="Editar usuario"
+                      >
+                        <UserCog size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        className="table-button"
+                        onClick={() => onToggleStatus(user.id)}
+                        disabled={user.id === currentUser.id}
+                      >
+                        {user.ativo ? "Bloquear" : "Liberar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </PageFrame>
   );
 }
 
@@ -965,9 +1217,12 @@ function App() {
   const [equipments, setEquipments] = useState<Equipment[]>(mockEquipments);
   const [solicitations, setSolicitations] = useState<Solicitation[]>(mockSolicitations);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [users, setUsers] = useState<AppUser[]>(mockUsers);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loginForm, setLoginForm] = useState<LoginFormState>(initialLoginForm);
   const [loginError, setLoginError] = useState("");
+  const [userForm, setUserForm] = useState<UserFormState>(initialUserForm);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [equipmentForm, setEquipmentForm] = useState<EquipmentFormState>(initialEquipmentForm);
   const [solicitationForm, setSolicitationForm] = useState<SolicitationFormState>(initialSolicitationForm);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -1055,6 +1310,12 @@ function App() {
     }));
   }, [currentUser]);
 
+  useEffect(() => {
+    if (currentUser?.role !== "admin" && page === "configuracoes") {
+      setPage("equipamentos");
+    }
+  }, [currentUser, page]);
+
   function updateEquipmentForm<K extends keyof EquipmentFormState>(
     field: K,
     value: EquipmentFormState[K],
@@ -1103,10 +1364,17 @@ function App() {
     }));
   }
 
+  function updateUserForm<K extends keyof UserFormState>(field: K, value: UserFormState[K]) {
+    setUserForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const foundUser = mockUsers.find(
+    const foundUser = users.find(
       (user) =>
         user.email.toLowerCase() === loginForm.email.trim().toLowerCase() &&
         user.senha === loginForm.senha,
@@ -1114,6 +1382,11 @@ function App() {
 
     if (!foundUser) {
       setLoginError("Email ou senha invalidos.");
+      return;
+    }
+
+    if (!foundUser.ativo) {
+      setLoginError("Este acesso esta bloqueado. Libere o usuario nas configuracoes.");
       return;
     }
 
@@ -1135,7 +1408,80 @@ function App() {
     setSelectedSolicitation(null);
     setDecisionFile(null);
     setDecisionForm(initialDecisionForm);
+    setUserForm(initialUserForm);
+    setEditingUserId(null);
     setStatusMessage("");
+  }
+
+  function handleEditUser(user: AppUser) {
+    setEditingUserId(user.id);
+    setUserForm({
+      nome: user.nome,
+      email: user.email,
+      senha: user.senha,
+      cargo: user.cargo,
+      telefone: user.telefone ?? "",
+      role: user.role,
+      ativo: user.ativo,
+    });
+    setPage("configuracoes");
+  }
+
+  function handleCancelUserEdit() {
+    setEditingUserId(null);
+    setUserForm(initialUserForm);
+  }
+
+  function handleToggleUserStatus(userId: string) {
+    setUsers((current) =>
+      current.map((user) =>
+        user.id === userId && user.id !== currentUser?.id
+          ? { ...user, ativo: !user.ativo }
+          : user,
+      ),
+    );
+    setStatusMessage("Status de acesso atualizado com sucesso.");
+  }
+
+  function handleUserSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const normalizedEmail = userForm.email.trim().toLowerCase();
+    const hasDuplicatedEmail = users.some(
+      (user) => user.email.toLowerCase() === normalizedEmail && user.id !== editingUserId,
+    );
+
+    if (hasDuplicatedEmail) {
+      setStatusMessage("Ja existe um usuario cadastrado com este email.");
+      return;
+    }
+
+    const payload: AppUser = {
+      id: editingUserId ?? crypto.randomUUID(),
+      nome: userForm.nome.trim(),
+      email: normalizedEmail,
+      senha: userForm.senha,
+      cargo: userForm.cargo.trim(),
+      telefone: userForm.telefone.trim(),
+      role: userForm.role,
+      ativo: userForm.ativo,
+    };
+
+    if (editingUserId) {
+      setUsers((current) => current.map((user) => (user.id === editingUserId ? payload : user)));
+
+      if (currentUser?.id === editingUserId) {
+        setCurrentUser(payload);
+      }
+
+      setStatusMessage("Usuario atualizado com sucesso.");
+    } else {
+      setUsers((current) => [payload, ...current]);
+      setStatusMessage("Novo acesso criado com sucesso.");
+    }
+
+    setEditingUserId(null);
+    setUserForm(initialUserForm);
   }
 
   async function handleEquipmentSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1551,6 +1897,20 @@ function App() {
             </div>
           </section>
         </PageFrame>
+      )}
+
+      {page === "configuracoes" && currentUser.role === "admin" && (
+        <AccessSettingsPage
+          users={users}
+          currentUser={currentUser}
+          form={userForm}
+          editingUserId={editingUserId}
+          onChange={updateUserForm}
+          onSubmit={handleUserSubmit}
+          onEdit={handleEditUser}
+          onToggleStatus={handleToggleUserStatus}
+          onCancelEdit={handleCancelUserEdit}
+        />
       )}
 
       {page === "solicitacoes" && (

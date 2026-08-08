@@ -165,3 +165,23 @@ Data de atualizacao: 2026-08-04
 - Ao salvar uma decisao, o sistema agora gera uma notificacao visual para o solicitante.
 - Foi criada integracao de update da decisao administrativa via src/api.ts.
 - O build foi validado com sucesso apos essas alteracoes usando npm run build.
+
+18. CONFIGURACOES E CONTROLE DE ACESSO
+- Foi criado um novo menu de Configuracoes no app.
+- Essa area aparece apenas para perfil administrador.
+- Foi adicionada a gestao de usuarios com:
+  - nome
+  - email
+  - senha
+  - telefone
+  - cargo
+  - perfil
+  - status de acesso
+- Os perfis disponiveis ficaram padronizados como:
+  - usuario
+  - administrador
+- Foi adicionado controle de acesso ativo e bloqueado.
+- Usuarios bloqueados nao conseguem entrar no sistema.
+- O administrador pode editar usuarios existentes e liberar ou bloquear acessos.
+- O proprio administrador logado nao pode ser bloqueado pela acao rapida da tabela.
+- O build voltou a ser validado com sucesso apos essa nova implementacao.

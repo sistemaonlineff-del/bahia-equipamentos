@@ -1,5 +1,5 @@
 export type DecisionStatus = "Aprovado" | "Recusado" | "Pendente";
-export type UserRole = "admin" | "solicitante";
+export type UserRole = "admin" | "usuario";
 
 export type EquipmentAttachment = {
   name: string;
@@ -46,6 +46,7 @@ export type AppUser = {
   cargo: string;
   role: UserRole;
   telefone?: string;
+  ativo: boolean;
 };
 
 export type NotificationItem = {
